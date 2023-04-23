@@ -1,20 +1,16 @@
 package uk.gemwire.camelot.commands;
 
-import com.jagrosh.jdautilities.command.*;
-import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.Emoji;
-import net.dv8tion.jda.api.interactions.components.Button;
-import net.dv8tion.jda.api.interactions.components.Component;
-import net.dv8tion.jda.api.requests.restaction.MessageAction;
+import com.jagrosh.jdautilities.command.CommandClient;
+import com.jagrosh.jdautilities.command.CommandClientBuilder;
 import uk.gemwire.camelot.BotMain;
 import uk.gemwire.camelot.commands.information.HelpCommand;
+import uk.gemwire.camelot.commands.moderation.KickCommand;
+import uk.gemwire.camelot.commands.moderation.ModLogsCommand;
+import uk.gemwire.camelot.commands.moderation.MuteCommand;
+import uk.gemwire.camelot.commands.moderation.NoteCommand;
+import uk.gemwire.camelot.commands.moderation.WarnCommand;
 import uk.gemwire.camelot.commands.utility.PingCommand;
-import uk.gemwire.camelot.configuration.Common;
 import uk.gemwire.camelot.configuration.Config;
-
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * The place where all control flow for commands converges.
@@ -40,16 +36,18 @@ public class Commands {
         commands = new CommandClientBuilder()
                 .setOwnerId(String.valueOf(Config.OWNER_SNOWFLAKE))
                 .setPrefix(Config.PREFIX)
-                .setHelpConsumer(HelpCommand::help)
+                .useHelpBuilder(false) // We use the slash command instead
 
                 .addSlashCommand(new PingCommand())
+                .addSlashCommand(new HelpCommand(BotMain.BUTTON_MANAGER))
+                .addSlashCommand(new ModLogsCommand(BotMain.BUTTON_MANAGER))
+
+                .addSlashCommands(new NoteCommand(), new WarnCommand(), new MuteCommand(), new KickCommand())
 
                 .build();
 
         // Register the commands to the listener.
         BotMain.get().addEventListener(commands);
-        // Register button listeners here.
-        BotMain.get().addEventListener(new HelpCommand.ButtonListener());
     }
 
 }

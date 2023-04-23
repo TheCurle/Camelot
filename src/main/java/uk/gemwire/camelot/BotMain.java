@@ -4,15 +4,24 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.requests.GatewayIntent;
+import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
+import org.flywaydb.core.Flyway;
+import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.sqlite.SQLiteDataSource;
 import uk.gemwire.camelot.commands.Commands;
 import uk.gemwire.camelot.configuration.Common;
 import uk.gemwire.camelot.configuration.Config;
+import uk.gemwire.camelot.util.ButtonManager;
 
-import javax.security.auth.login.LoginException;
-import java.util.*;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Bot program entry point.
@@ -34,17 +43,28 @@ public class BotMain {
      * These will probably be changed often, so they're prominent.
      */
     private static final List<GatewayIntent> INTENTS = Arrays.asList(
-            GatewayIntent.GUILD_MESSAGES,               // For sending messages in chat. Most replies will be ephemeral, but this is useful.
-            GatewayIntent.GUILD_EMOJIS,                 // For sending emojis in chat, as per ie. tricks.
+            GatewayIntent.GUILD_MESSAGES,               // For receiving messages.
+            GatewayIntent.MESSAGE_CONTENT,              // For reading messages.
+            GatewayIntent.GUILD_EMOJIS_AND_STICKERS,    // For receiving emoji updates.
             GatewayIntent.GUILD_MESSAGE_REACTIONS,      // For reading message reactions. This should be removed after Actions are implemented.
-            GatewayIntent.GUILD_MEMBERS,                // For reading online members. TODO: why do we need this?
-            GatewayIntent.DIRECT_MESSAGES               // For sending direct messages, as per ie. pings.
+            GatewayIntent.GUILD_MEMBERS,                // For reading online members, such as for resolving moderators by ID.
+            GatewayIntent.DIRECT_MESSAGES               // For receiving direct messages.
     );
+
+    /**
+     * The static button manager, used for easy button handling.
+     */
+    public static final ButtonManager BUTTON_MANAGER = new ButtonManager();
 
     /**
      Static instance of the bot. Can be accessed by any class with {@link #get()}
      */
     private static JDA instance;
+
+    /**
+     * Static JDBI instance. Can be accessed via {@link #jdbi()}.
+     */
+    private static Jdbi jdbi;
 
     /**
      * Logger instance for the whole bot. Perhaps overkill.
@@ -59,6 +79,13 @@ public class BotMain {
         return instance;
     }
 
+    /**
+     * {@return the static JDBI instance}
+     */
+    public static Jdbi jdbi() {
+        return jdbi;
+    }
+
     public static void main(String[] args) {
         // This throw shouldn't occur by any Earthly means but Java demands that i catch it.
         try {
@@ -68,16 +95,42 @@ public class BotMain {
             System.exit(-1);
         }
 
-        try {
-            instance = JDABuilder
-                    .create(Config.LOGIN_TOKEN, INTENTS)
-                    .disableCache(CacheFlag.VOICE_STATE, CacheFlag.ACTIVITY, CacheFlag.CLIENT_STATUS, CacheFlag.ONLINE_STATUS)
-                    .setActivity(Activity.playing("the fiddle"))
-                    .build();
+        instance = JDABuilder
+                .create(Config.LOGIN_TOKEN, INTENTS)
+                .disableCache(CacheFlag.VOICE_STATE, CacheFlag.ACTIVITY, CacheFlag.CLIENT_STATUS, CacheFlag.ONLINE_STATUS)
+                .setActivity(Activity.playing("the fiddle"))
+                .setMemberCachePolicy(MemberCachePolicy.ALL)
+                .addEventListeners(BUTTON_MANAGER)
+                .build();
 
-            Commands.init();
-        } catch (LoginException e) {
-            LOGGER.error("Unable to log in. Check the token in config.properties. Error: " + e.getMessage());
+        jdbi = createDatabaseConnection();
+
+        Commands.init();
+    }
+
+    public static Jdbi createDatabaseConnection() {
+        final Path dbPath = Path.of("data.db");
+        if (!Files.exists(dbPath)) {
+            try {
+                Files.createFile(dbPath);
+            } catch (IOException e) {
+                throw new RuntimeException("Exception creating database!", e);
+            }
         }
+        final String url = "jdbc:sqlite:" + dbPath;
+        final SQLiteDataSource dataSource = new SQLiteDataSource();
+        dataSource.setUrl(url);
+        dataSource.setEncoding("UTF-8");
+        dataSource.setDatabaseName("Camelot DB");
+        LOGGER.info("Initiating SQLite database connection at {}.", url);
+
+        final var flyway = Flyway.configure()
+                .dataSource(dataSource)
+                .locations("classpath:db")
+                .load();
+        flyway.migrate();
+
+        return Jdbi.create(dataSource)
+                .installPlugin(new SqlObjectPlugin());
     }
 }
