@@ -1,9 +1,11 @@
 package uk.gemwire.camelot.commands.moderation;
 
+import com.google.common.base.Preconditions;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
@@ -13,11 +15,12 @@ import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import org.jetbrains.annotations.Nullable;
 import uk.gemwire.camelot.BotMain;
+import uk.gemwire.camelot.configuration.Config;
 import uk.gemwire.camelot.db.schemas.ModLogEntry;
 import uk.gemwire.camelot.db.transactionals.ModLogsDAO;
 
+import javax.annotation.ParametersAreNullableByDefault;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class ModerationCommand<T> extends SlashCommand {
 
@@ -32,11 +35,19 @@ public abstract class ModerationCommand<T> extends SlashCommand {
 
     @Override
     protected final void execute(SlashCommandEvent event) {
-        final ModerationAction<T> action = createEntry(event);
+        final ModerationAction<T> action;
+        try {
+            action = createEntry(event);
+        } catch (IllegalArgumentException exception) {
+            event.reply("Failed to validate arguments: " + exception.getMessage())
+                    .setEphemeral(true).queue();
+            return;
+        }
+
         if (action == null) return;
         final ModLogEntry entry = action.entry;
 
-        BotMain.jdbi().useExtension(ModLogsDAO.class, dao -> dao.insert(entry));
+        entry.setId(BotMain.jdbi().withExtension(ModLogsDAO.class, dao -> dao.insert(entry)));
         event.deferReply().queue();
         event.getJDA().retrieveUserById(entry.user())
             .submit()
@@ -60,6 +71,14 @@ public abstract class ModerationCommand<T> extends SlashCommand {
 
     protected abstract RestAction<?> handle(User user, ModerationAction<T> action);
 
+    @ParametersAreNullableByDefault
+    protected final boolean canModerate(Member target, Member moderator) {
+        Preconditions.checkArgument(target != null, "Unknown user!");
+        Preconditions.checkArgument(moderator != null, "Can only run command in guild!");
+        final Guild guild = target.getGuild();
+        return moderator.canInteract(target) && guild.getSelfMember().canInteract(target);
+    }
+
     protected RestAction<Message> dmUser(ModLogEntry entry, User user) {
         final Guild guild = user.getJDA().getGuildById(entry.guild());
         final EmbedBuilder builder = new EmbedBuilder()
@@ -78,6 +97,19 @@ public abstract class ModerationCommand<T> extends SlashCommand {
     protected void logAndExecute(ModerationAction<T> action, InteractionHook interaction, boolean dmedUser) {
         interaction.getJDA().retrieveUserById(action.entry.user())
                 .flatMap(user -> {
+                    action.entry.format(interaction.getJDA())
+                            .thenAccept(caseData -> Config.MODERATION_LOGS.log(new EmbedBuilder()
+                                    .setTitle("%s has been %s".formatted(user.getAsTag(), action.entry.type().getAction()))
+                                    .setDescription("Case information below:")
+                                    .addField(caseData)
+                                    .setTimestamp(action.entry.timestamp())
+                                    .setFooter("User ID: " + user.getId(), user.getAvatarUrl())
+                                    .setColor(action.entry.type().getColor())
+                                    .build()))
+                            .exceptionally((ex) -> {
+                                return null;
+                            });
+
                     final EmbedBuilder builder = new EmbedBuilder()
                             .setDescription("%s has been %s. | **%s**".formatted(user.getAsTag(), action.entry.type().getAction(), action.entry.reasonOrDefault()))
                             .setTimestamp(action.entry.timestamp())

@@ -11,28 +11,32 @@ import net.dv8tion.jda.api.requests.RestAction;
 import org.jetbrains.annotations.Nullable;
 import uk.gemwire.camelot.db.schemas.ModLogEntry;
 
+import java.time.Instant;
 import java.util.List;
 
-public class KickCommand extends ModerationCommand<Void> {
-    public KickCommand() {
-        this.name = "kick";
-        this.help = "Kicks an user";
+public class UnmuteCommand extends ModerationCommand<Void> {
+
+    public UnmuteCommand() {
+        this.name = "unmute";
+        this.help = "Unmutes an user";
         this.options = List.of(
-                new OptionData(OptionType.USER, "user", "The user to kick", true),
-                new OptionData(OptionType.STRING, "reason", "The user for kicking the user", true)
+                new OptionData(OptionType.USER, "user", "The user to mute", true),
+                new OptionData(OptionType.STRING, "reason", "The reason for unmuting the user", false)
         );
         this.userPermissions = new Permission[] {
-                Permission.KICK_MEMBERS
+                Permission.MODERATE_MEMBERS
         };
     }
 
     @Nullable
     @Override
+    @SuppressWarnings("DataFlowIssue")
     protected ModerationAction<Void> createEntry(SlashCommandEvent event) {
         final Member target = event.optMember("user");
         Preconditions.checkArgument(canModerate(target, event.getMember()), "Cannot moderate user!");
+        Preconditions.checkArgument(target.getTimeOutEnd() != null && Instant.now().isBefore(target.getTimeOutEnd().toInstant()), "User is not timed out!");
         return new ModerationAction<>(
-                ModLogEntry.kick(target.getIdLong(), event.getGuild().getIdLong(), event.getUser().getIdLong(), event.optString("reason")),
+                ModLogEntry.unmute(target.getIdLong(), event.getGuild().getIdLong(), event.getUser().getIdLong(), event.optString("reason")),
                 null
         );
     }
@@ -43,7 +47,7 @@ public class KickCommand extends ModerationCommand<Void> {
         final ModLogEntry entry = action.entry();
         return user.getJDA().getGuildById(entry.guild())
                 .retrieveMemberById(entry.user())
-                .map(mem -> mem.kick().reason("rec: " + entry.reasonOrDefault()));
+                .flatMap(mem -> mem.removeTimeout().reason("rec: " + entry.reasonOrDefault()));
     }
 
 }

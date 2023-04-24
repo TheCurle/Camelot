@@ -4,10 +4,13 @@ import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandClientBuilder;
 import uk.gemwire.camelot.BotMain;
 import uk.gemwire.camelot.commands.information.HelpCommand;
+import uk.gemwire.camelot.commands.moderation.BanCommand;
 import uk.gemwire.camelot.commands.moderation.KickCommand;
 import uk.gemwire.camelot.commands.moderation.ModLogsCommand;
 import uk.gemwire.camelot.commands.moderation.MuteCommand;
 import uk.gemwire.camelot.commands.moderation.NoteCommand;
+import uk.gemwire.camelot.commands.moderation.UnbanCommand;
+import uk.gemwire.camelot.commands.moderation.UnmuteCommand;
 import uk.gemwire.camelot.commands.moderation.WarnCommand;
 import uk.gemwire.camelot.commands.utility.PingCommand;
 import uk.gemwire.camelot.configuration.Config;
@@ -40,9 +43,15 @@ public class Commands {
 
                 .addSlashCommand(new PingCommand())
                 .addSlashCommand(new HelpCommand(BotMain.BUTTON_MANAGER))
-                .addSlashCommand(new ModLogsCommand(BotMain.BUTTON_MANAGER))
 
-                .addSlashCommands(new NoteCommand(), new WarnCommand(), new MuteCommand(), new KickCommand())
+                // Moderation commands
+                .addSlashCommands(
+                        new ModLogsCommand(BotMain.BUTTON_MANAGER),
+                        new NoteCommand(), new WarnCommand(),
+                        new MuteCommand(), new UnmuteCommand(),
+                        new KickCommand(),
+                        new BanCommand(), new UnbanCommand()
+                )
 
                 .build();
 

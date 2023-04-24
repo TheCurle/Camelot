@@ -4,8 +4,6 @@ import org.jdbi.v3.core.Jdbi;
 import uk.gemwire.camelot.db.schemas.ModLogEntry;
 import uk.gemwire.camelot.db.transactionals.ModLogsDAO;
 
-import java.time.Duration;
-
 public class Hello {
     public static void main(String[] args) {
         final Jdbi jdbi = BotMain.createDatabaseConnection();

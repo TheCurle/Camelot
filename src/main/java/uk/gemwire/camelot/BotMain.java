@@ -3,6 +3,10 @@ package uk.gemwire.camelot;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.UserSnowflake;
+import net.dv8tion.jda.api.exceptions.ErrorHandler;
+import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
@@ -15,6 +19,7 @@ import org.sqlite.SQLiteDataSource;
 import uk.gemwire.camelot.commands.Commands;
 import uk.gemwire.camelot.configuration.Common;
 import uk.gemwire.camelot.configuration.Config;
+import uk.gemwire.camelot.db.transactionals.PendingUnbansDAO;
 import uk.gemwire.camelot.util.ButtonManager;
 
 import java.io.IOException;
@@ -22,6 +27,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Bot program entry point.
@@ -55,6 +63,11 @@ public class BotMain {
      * The static button manager, used for easy button handling.
      */
     public static final ButtonManager BUTTON_MANAGER = new ButtonManager();
+
+    /**
+     * The static {@link ScheduledExecutorService} for scheduling tasks.
+     */
+    public static final ScheduledExecutorService EXECUTOR = Executors.newScheduledThreadPool(2);
 
     /**
      Static instance of the bot. Can be accessed by any class with {@link #get()}
@@ -102,10 +115,26 @@ public class BotMain {
                 .setMemberCachePolicy(MemberCachePolicy.ALL)
                 .addEventListeners(BUTTON_MANAGER)
                 .build();
+        Config.populate(instance);
 
         jdbi = createDatabaseConnection();
 
         Commands.init();
+
+        EXECUTOR.scheduleAtFixedRate(() -> {
+            final PendingUnbansDAO db = jdbi().onDemand(PendingUnbansDAO.class);
+            for (final Guild guild : instance.getGuilds()) {
+                final List<Long> users = db.getUsersToUnban(guild.getIdLong());
+                if (!users.isEmpty()) {
+                    for (final long toUnban : users) {
+                        // We do not use allOf because we do not want a deleted user to cause all unbans to fail
+                        guild.unban(UserSnowflake.fromId(toUnban)).reason("rec: Ban expired")
+                                .queue(suc -> db.delete(toUnban, guild.getIdLong()), new ErrorHandler()
+                                        .handle(ErrorResponse.UNKNOWN_USER, e -> db.delete(toUnban, guild.getIdLong()))); // User doesn't exist, so don't care about the unban anymore
+                    }
+                }
+            }
+        }, 1, 1, TimeUnit.MINUTES);
     }
 
     public static Jdbi createDatabaseConnection() {

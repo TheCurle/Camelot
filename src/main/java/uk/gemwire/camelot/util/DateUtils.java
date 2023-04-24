@@ -3,12 +3,38 @@ package uk.gemwire.camelot.util;
 import javax.annotation.Nonnull;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.List;
 
 public class DateUtils {
     public static String formatDuration(Duration duration) {
-        return "some time";
+        final StringBuilder str = new StringBuilder();
+
+        final long years = duration.getSeconds() / ChronoUnit.YEARS.getDuration().getSeconds();
+        duration = duration.minus(of(years, ChronoUnit.YEARS));
+        if (years > 0) appendMaybePlural(str, years, "year");
+
+        final long months = duration.getSeconds() / ChronoUnit.MONTHS.getDuration().getSeconds();
+        duration = duration.minus(of(months, ChronoUnit.MONTHS));
+        if (months > 0) appendMaybePlural(str, months, "month");
+
+        final long days = duration.toDays();
+        duration = duration.minus(Duration.ofDays(days));
+        if (days > 0) appendMaybePlural(str, days, "day");
+
+        final long hours = duration.toHours();
+        duration = duration.minus(Duration.ofHours(hours));
+        if (hours > 0) appendMaybePlural(str, days, "hour");
+
+        final long mins = duration.toMinutes();
+        if (mins > 0) appendMaybePlural(str, mins, "minute");
+
+        return str.toString().trim();
+    }
+
+    private static void appendMaybePlural(StringBuilder builder, long amount, String noun) {
+        builder.append(amount == 1 ? amount + noun : (amount + noun + "s")).append(" ");
     }
 
     private static List<String> splitInput(String str) {
@@ -55,6 +81,10 @@ public class DateUtils {
             default -> ChronoUnit.MINUTES;
         };
         final long tm = Long.parseLong(time.substring(0, time.length() - 1));
-        return Duration.of(tm, unit);
+        return of(tm, unit);
+    }
+
+    public static Duration of(long time, TemporalUnit unit) {
+        return unit.isDurationEstimated() ? Duration.ofSeconds(time * unit.getDuration().getSeconds()) : Duration.of(time, unit);
     }
 }

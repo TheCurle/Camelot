@@ -1,5 +1,6 @@
 package uk.gemwire.camelot.commands.moderation;
 
+import com.google.common.base.Preconditions;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.User;
@@ -12,7 +13,7 @@ import uk.gemwire.camelot.db.schemas.ModLogEntry;
 import java.util.List;
 
 public class WarnCommand extends ModerationCommand<Void> {
-    public WarnCommand() {
+    public WarnCommand() { // TODO - delwarn command, decide if to use a subcommand
         this.name = "warn";
         this.help = "Warns an user";
         this.options = List.of(
@@ -28,10 +29,7 @@ public class WarnCommand extends ModerationCommand<Void> {
     @Override
     protected ModerationAction<Void> createEntry(SlashCommandEvent event) {
         final User target = event.optUser("user");
-        if (target == null) {
-            event.reply("Unknown user!").setEphemeral(true).queue();
-            return null;
-        }
+        Preconditions.checkArgument(target != null, "Unknown user!");
         return new ModerationAction<>(
                 ModLogEntry.warn(target.getIdLong(), event.getGuild().getIdLong(), event.getUser().getIdLong(), event.optString("reason")),
                 null

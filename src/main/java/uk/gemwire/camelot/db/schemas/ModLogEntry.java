@@ -22,7 +22,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public final class ModLogEntry {
-    private final int id;
+    private int id;
     private final Type type;
     private final long user;
     private final long guild;
@@ -42,6 +42,10 @@ public final class ModLogEntry {
         this.timestamp = timestamp;
         this.duration = duration;
         this.reason = reason;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public int id() {
@@ -82,7 +86,7 @@ public final class ModLogEntry {
     }
 
     public String reasonOrDefault() {
-        return Objects.requireNonNullElse(reason(), "*Not specified*");
+        return Objects.requireNonNullElse(reason(), "Reason not specified");
     }
 
     public CompletableFuture<MessageEmbed.Field> format(JDA jda) {
@@ -93,7 +97,7 @@ public final class ModLogEntry {
         WARN("warned", false, 0x00BFFF),
         KICK("kicked", false, 0xFFFFE0),
 
-        MUTE("muted", true, 0x000000),
+        MUTE("muted", true, 0xD3D3D3),
         UNMUTE("un-muted", false, 0xFFFFFF),
 
         BAN("banned", true, 0xFF0000),
