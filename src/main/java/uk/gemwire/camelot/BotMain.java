@@ -34,14 +34,14 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Bot program entry point.
- *
+ * <p>
  * Camelot is a utility and management bot designed for the Forge Project Discord server.
  * It provides entertainment systems like quotes, utility systems like tricks and pings.
- *
+ * <p>
  * The main feature is translation between Minecraft obfuscation mappings.
  * Defaulting to the latest Mojang mappings, it can translate mapped to SRG names,
- *  and for versions where MCPBot exports exist, MCP to Mojmap translations.
- *
+ * and for versions where MCPBot exports exist, MCP to Mojmap translations.
+ * <p>
  * Camelot is designed to be a successor to K9, and is developed in tandem with its sister Lost City, R'lyeh.
  *
  * @author Curle
@@ -72,7 +72,7 @@ public class BotMain {
     public static final ScheduledExecutorService EXECUTOR = Executors.newScheduledThreadPool(2);
 
     /**
-     Static instance of the bot. Can be accessed by any class with {@link #get()}
+     * Static instance of the bot. Can be accessed by any class with {@link #get()}
      */
     private static JDA instance;
 
@@ -139,6 +139,11 @@ public class BotMain {
         }, 1, 1, TimeUnit.MINUTES);
     }
 
+    /**
+     * Sets up a connection to the SQLite database located at {@code data.db}, migrating it, if necessary.
+     *
+     * @return a JDBI connection to the database
+     */
     public static Jdbi createDatabaseConnection() {
         final Path dbPath = Path.of("data.db");
         if (!Files.exists(dbPath)) {

@@ -21,6 +21,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+/**
+ * Represents a moderation action.
+ */
 public final class ModLogEntry {
     private int id;
     private final Type type;
@@ -48,6 +51,11 @@ public final class ModLogEntry {
         this.id = id;
     }
 
+    /**
+     * {@return the ID of this entry}
+     *
+     * @throws UnsupportedOperationException if this entry does not have an ID (e.g. is not from a database)
+     */
     public int id() {
         if (id == -1) {
             throw new UnsupportedOperationException("This entry is not from a database!");
@@ -55,36 +63,64 @@ public final class ModLogEntry {
         return id;
     }
 
+    /**
+     * {@return the type of action this entry represents}
+     */
     public Type type() {
         return type;
     }
 
+    /**
+     * {@return the ID of the moderated user}
+     */
     public long user() {
         return user;
     }
 
+    /**
+     * {@return the ID of the guild the action was taken}
+     */
     public long guild() {
         return guild;
     }
 
+    /**
+     * {@return the ID of the moderator}
+     */
     public long moderator() {
         return moderator;
     }
 
+    /**
+     * {@return the timestamp of the moderation action}
+     */
     public Instant timestamp() {
         return timestamp;
     }
 
+    /**
+     * {@return the duration of the moderation action}.
+     * <p>
+     * Can be {@code null}. In the case of a ban, the user will be unbanned after this duration (if present),
+     * and in the case of a mute it represents how long the user is muted for.
+     * </p>
+     */
     @Nullable
     public Duration duration() {
         return duration;
     }
 
+    /**
+     * {@return the reason for taking this action}
+     */
     @Nullable
     public String reason() {
         return reason;
     }
 
+    /**
+     * {@return the reason, or {@code Reason not specified} if one is not present}
+     */
     public String reasonOrDefault() {
         return Objects.requireNonNullElse(reason(), "Reason not specified");
     }
@@ -103,10 +139,19 @@ public final class ModLogEntry {
                 '}';
     }
 
+    /**
+     * Formats this log entry into an embed field containing all the information.
+     *
+     * @param jda the JDA instance to use for querying users
+     * @return a completable future which will contain the formatted field
+     */
     public CompletableFuture<MessageEmbed.Field> format(JDA jda) {
         return type().format(this, jda);
     }
 
+    /**
+     * The type of a moderation action.
+     */
     public enum Type {
         WARN("warned", false, 0x00BFFF),
         KICK("kicked", false, 0xFFFFE0),
@@ -147,18 +192,34 @@ public final class ModLogEntry {
             this.color = color;
         }
 
+        /**
+         * {@return the past tense form of the verb describing the action}
+         */
         public String getAction() {
             return action;
         }
 
+        /**
+         * {@return {@code true} if this action supports a duration, {@code false} otherwise}
+         */
         public boolean supportsDuration() {
             return supportsDuration;
         }
 
+        /**
+         * {@return the color to be used for displaying this action in embeds}
+         */
         public int getColor() {
             return color;
         }
 
+        /**
+         * Formats a log entry into an embed field containing all the information.
+         *
+         * @param entry the log entry to format
+         * @param jda   the JDA instance to use for querying users
+         * @return a completable future which will contain the formatted field
+         */
         public CompletableFuture<MessageEmbed.Field> format(ModLogEntry entry, JDA jda) {
             if (supportsDuration) {
                 return collectInformation(entry, jda)
@@ -197,6 +258,9 @@ public final class ModLogEntry {
         }
     }
 
+    /**
+     * Formats the {@link #duration()} into a human-readable string, or if one doesn't exist, returns {@code Indefinite}.
+     */
     public String formatDuration() {
         return "**Duration**: " +
                 (duration() == null ? "Indefinite" :

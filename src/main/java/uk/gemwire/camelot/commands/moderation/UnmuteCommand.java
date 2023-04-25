@@ -14,6 +14,9 @@ import uk.gemwire.camelot.db.schemas.ModLogEntry;
 import java.time.Instant;
 import java.util.List;
 
+/**
+ * The command used to unmute a user.
+ */
 public class UnmuteCommand extends ModerationCommand<Void> {
 
     public UnmuteCommand() {

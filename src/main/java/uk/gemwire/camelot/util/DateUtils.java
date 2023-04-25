@@ -7,7 +7,17 @@ import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Some utility methods for working with time.
+ */
 public class DateUtils {
+    /**
+     * Formats the given {@code duration} to a human-readable string. <br>
+     * e.g. for 176893282 seconds, this method returns {@code 5 years 7 months 8 days 8 hours 31 minutes 40 seconds}.
+     *
+     * @param duration the duration to format
+     * @return the human-readable form of the duration
+     */
     public static String formatDuration(Duration duration) {
         final StringBuilder str = new StringBuilder();
 
@@ -28,6 +38,7 @@ public class DateUtils {
         if (hours > 0) appendMaybePlural(str, days, "hour");
 
         final long mins = duration.toMinutes();
+        duration = duration.minus(Duration.ofMinutes(mins));
         if (mins > 0) appendMaybePlural(str, mins, "minute");
 
         final long secs = duration.toSeconds();
@@ -87,6 +98,10 @@ public class DateUtils {
         return of(tm, unit);
     }
 
+    /**
+     * An alternative of {@link Duration#of(long, TemporalUnit)} that can handle estimated durations,
+     * by using their estimated seconds count.
+     */
     public static Duration of(long time, TemporalUnit unit) {
         return unit.isDurationEstimated() ? Duration.ofSeconds(time * unit.getDuration().getSeconds()) : Duration.of(time, unit);
     }

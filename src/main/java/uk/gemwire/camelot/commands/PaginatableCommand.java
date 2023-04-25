@@ -31,6 +31,9 @@ public abstract class PaginatableCommand<T extends PaginatableCommand.Pagination
     };
 
     private final ButtonManager buttonManager;
+    /**
+     * The amount of items a page can display.
+     */
     protected int itemsPerPage = 10;
 
     protected PaginatableCommand(ButtonManager buttonManager) {
@@ -80,6 +83,12 @@ public abstract class PaginatableCommand<T extends PaginatableCommand.Pagination
         return ((itemAmount % this.itemsPerPage) == 0) ? div : (div + 1);
     }
 
+    /**
+     * Handle the button interaction.
+     *
+     * @param event the event that triggered the interaction
+     * @param data  the button data
+     */
     protected void onButton(final ButtonInteractionEvent event, final T data) {
         final String[] split = event.getButton().getId().split("/");
         int currentPage = Integer.parseInt(split[1]);

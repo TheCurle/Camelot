@@ -12,6 +12,16 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+/**
+ * A simple in-memory button manager. <br>
+ * This manager uses {@link Consumer Consumers}, allowing you to store any data you want outside the button ID itself. <br>
+ * Buttons will be assigned a unique {@link UUID}, which will be stored and handled for 10 minutes, or until the button
+ * becomes the {@code 1000th} recoded button, at which point it will be invalidated. <br><br>
+ * <p>
+ * The manager uses {@code /} as a data separator in the button ID, with the first entry being the button UUID.
+ *
+ * @see uk.gemwire.camelot.BotMain#BUTTON_MANAGER
+ */
 public class ButtonManager implements EventListener {
     private final Cache<UUID, Consumer<ButtonInteractionEvent>> buttons = Caffeine.newBuilder()
             .expireAfterWrite(10, TimeUnit.MINUTES)
@@ -35,6 +45,12 @@ public class ButtonManager implements EventListener {
         }
     }
 
+    /**
+     * Assigns the given {@code consumer} a unique {@link UUID} which will be handled by this manager for the next 10 minutes.
+     *
+     * @param consumer the consumer to execute on button click
+     * @return the assigned UUID
+     */
     public UUID newButton(Consumer<ButtonInteractionEvent> consumer) {
         final UUID id = UUID.randomUUID();
         buttons.put(id, consumer);

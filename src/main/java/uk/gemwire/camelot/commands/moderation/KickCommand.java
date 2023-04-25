@@ -13,6 +13,9 @@ import uk.gemwire.camelot.db.schemas.ModLogEntry;
 
 import java.util.List;
 
+/**
+ * The command used to kick a user.
+ */
 public class KickCommand extends ModerationCommand<Void> {
     public KickCommand() {
         this.name = "kick";

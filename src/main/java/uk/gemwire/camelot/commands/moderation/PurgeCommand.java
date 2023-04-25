@@ -16,6 +16,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
+/**
+ * The command used to purge a number of messages from a channel, optionally filtering by the author.
+ */
 public class PurgeCommand extends SlashCommand {
     public PurgeCommand() {
         this.name = "purge";

@@ -18,9 +18,14 @@ import uk.gemwire.camelot.db.schemas.ModLogEntry;
 import uk.gemwire.camelot.db.transactionals.ModLogsDAO;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.time.OffsetDateTime;
 
+/**
+ * An event listener that listens for the {@link GuildAuditLogEntryCreateEvent} event, automatically recording
+ * any manual actions in the {@link ModLogsDAO mod log}. <br>
+ * A "manual action" is an action with an unspecified reason or with a reason that starts with {@code "rec: "}.
+ * This is to avoid recording actions which have been already recorded by the bot (e.g. bans done through the command)
+ */
 public class ModerationActionRecorder implements EventListener {
     @Override
     public void onEvent(@NotNull GenericEvent gevent) {
@@ -28,7 +33,8 @@ public class ModerationActionRecorder implements EventListener {
         final AuditLogEntry entry = event.getEntry();
         final ActionType type = entry.getType();
 
-        if (entry.getReason() != null && entry.getReason().startsWith("rec: ")) return; // If the reason starts with `rec:` it means that the bot moderated someone after a moderator used a command
+        if (entry.getReason() != null && entry.getReason().startsWith("rec: "))
+            return; // If the reason starts with `rec:` it means that the bot moderated someone after a moderator used a command
 
         final ModLogEntry logEntry = switch (type) {
             case BAN -> ModLogEntry.ban(
@@ -77,11 +83,23 @@ public class ModerationActionRecorder implements EventListener {
         log(entry, jda);
     }
 
+    /**
+     * Log the given mod log entry in the {@link Config#MODERATION_LOGS logging channel}.
+     *
+     * @param entry the entry to log
+     * @param jda   the JDA instance to be used for querying users
+     */
     public static void log(ModLogEntry entry, JDA jda) {
         jda.retrieveUserById(entry.user())
                 .queue(user -> log(entry, user));
     }
 
+    /**
+     * Log the given mod log entry in the {@link Config#MODERATION_LOGS logging channel}.
+     *
+     * @param entry the entry to log
+     * @param user  the affected user
+     */
     public static void log(ModLogEntry entry, User user) {
         entry.format(user.getJDA())
                 .thenAccept(caseData -> Config.MODERATION_LOGS.log(new EmbedBuilder()

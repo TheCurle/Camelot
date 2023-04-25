@@ -15,6 +15,9 @@ import uk.gemwire.camelot.db.transactionals.ModLogsDAO;
 
 import java.util.List;
 
+/**
+ * The command used to manage warnings.
+ */
 public class WarnCommand extends SlashCommand {
     public WarnCommand() {
         this.name = "warn";
@@ -31,6 +34,9 @@ public class WarnCommand extends SlashCommand {
 
     }
 
+    /**
+     * The command used to warn a user.
+     */
     public static final class AddCommand extends ModerationCommand<Void> {
         public AddCommand() {
             this.name = "add";
@@ -57,6 +63,9 @@ public class WarnCommand extends SlashCommand {
         }
     }
 
+    /**
+     * The command used to delete a warning.
+     */
     public static final class DeleteCommand extends SlashCommand {
         public DeleteCommand() {
             this.name = "delete";

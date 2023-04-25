@@ -22,6 +22,9 @@ import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
+/**
+ * The command used to query the moderation logs of an user.
+ */
 public class ModLogsCommand extends PaginatableCommand<ModLogsCommand.Data> {
 
     public ModLogsCommand(ButtonManager buttonManager) {

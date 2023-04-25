@@ -22,6 +22,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * The command used to ban a user.
+ */
 public class BanCommand extends ModerationCommand<Integer> {
 
     public BanCommand() {

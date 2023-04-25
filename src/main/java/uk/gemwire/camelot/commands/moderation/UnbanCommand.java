@@ -13,6 +13,9 @@ import uk.gemwire.camelot.db.schemas.ModLogEntry;
 
 import java.util.List;
 
+/**
+ * The command used to unban a user.
+ */
 public class UnbanCommand extends ModerationCommand<Void> {
 
     public UnbanCommand() {

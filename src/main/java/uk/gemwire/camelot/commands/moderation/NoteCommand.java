@@ -16,6 +16,9 @@ import uk.gemwire.camelot.db.transactionals.ModLogsDAO;
 
 import java.util.List;
 
+/**
+ * The command used to handle moderation notes.
+ */
 public class NoteCommand extends SlashCommand {
     public NoteCommand() {
         this.name = "note";
@@ -33,6 +36,9 @@ public class NoteCommand extends SlashCommand {
 
     }
 
+    /**
+     * The command used to add a note to a user.
+     */
     public static final class AddCommand extends ModerationCommand<Void> {
         public AddCommand() {
             this.name = "note";
@@ -62,6 +68,9 @@ public class NoteCommand extends SlashCommand {
         }
     }
 
+    /**
+     * The command used to remove a note.
+     */
     public static final class RemoveCommand extends SlashCommand {
         public RemoveCommand() {
             this.name = "remove";
