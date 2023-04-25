@@ -30,11 +30,14 @@ public class DateUtils {
         final long mins = duration.toMinutes();
         if (mins > 0) appendMaybePlural(str, mins, "minute");
 
+        final long secs = duration.toSeconds();
+        if (secs > 0) appendMaybePlural(str, secs, "second");
+
         return str.toString().trim();
     }
 
     private static void appendMaybePlural(StringBuilder builder, long amount, String noun) {
-        builder.append(amount == 1 ? amount + noun : (amount + noun + "s")).append(" ");
+        builder.append(amount == 1 ? amount + " " + noun : (amount + " " + noun + "s")).append(" ");
     }
 
     private static List<String> splitInput(String str) {

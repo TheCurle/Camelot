@@ -20,6 +20,7 @@ import uk.gemwire.camelot.commands.Commands;
 import uk.gemwire.camelot.configuration.Common;
 import uk.gemwire.camelot.configuration.Config;
 import uk.gemwire.camelot.db.transactionals.PendingUnbansDAO;
+import uk.gemwire.camelot.log.ModerationActionRecorder;
 import uk.gemwire.camelot.util.ButtonManager;
 
 import java.io.IOException;
@@ -56,7 +57,8 @@ public class BotMain {
             GatewayIntent.GUILD_EMOJIS_AND_STICKERS,    // For receiving emoji updates.
             GatewayIntent.GUILD_MESSAGE_REACTIONS,      // For reading message reactions. This should be removed after Actions are implemented.
             GatewayIntent.GUILD_MEMBERS,                // For reading online members, such as for resolving moderators by ID.
-            GatewayIntent.DIRECT_MESSAGES               // For receiving direct messages.
+            GatewayIntent.DIRECT_MESSAGES,              // For receiving direct messages.
+            GatewayIntent.GUILD_MODERATION              // For receiving moderation-related events, such as bans, unbans and audit log changes.
     );
 
     /**
@@ -113,7 +115,7 @@ public class BotMain {
                 .disableCache(CacheFlag.VOICE_STATE, CacheFlag.ACTIVITY, CacheFlag.CLIENT_STATUS, CacheFlag.ONLINE_STATUS)
                 .setActivity(Activity.playing("the fiddle"))
                 .setMemberCachePolicy(MemberCachePolicy.ALL)
-                .addEventListeners(BUTTON_MANAGER)
+                .addEventListeners(BUTTON_MANAGER, new ModerationActionRecorder())
                 .build();
         Config.populate(instance);
 

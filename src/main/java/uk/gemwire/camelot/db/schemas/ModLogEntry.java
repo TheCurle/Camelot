@@ -89,6 +89,20 @@ public final class ModLogEntry {
         return Objects.requireNonNullElse(reason(), "Reason not specified");
     }
 
+    @Override
+    public String toString() {
+        return "ModLogEntry{" +
+                "id=" + id +
+                ", type=" + type +
+                ", user=" + user +
+                ", guild=" + guild +
+                ", moderator=" + moderator +
+                ", timestamp=" + timestamp +
+                ", duration=" + duration +
+                ", reason='" + reason + '\'' +
+                '}';
+    }
+
     public CompletableFuture<MessageEmbed.Field> format(JDA jda) {
         return type().format(this, jda);
     }

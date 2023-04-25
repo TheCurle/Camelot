@@ -67,7 +67,7 @@ public class NoteCommand extends SlashCommand {
             this.name = "remove";
             this.help = "Remove a note from an user";
             this.options = List.of(
-                    new OptionData(OptionType.USER, "user", "The user to add a note to", true),
+                    new OptionData(OptionType.USER, "user", "The user to remove a note from", true),
                     new OptionData(OptionType.INTEGER, "note", "The number of the note to remove", true)
             );
         }
