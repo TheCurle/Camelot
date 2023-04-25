@@ -44,6 +44,11 @@ public abstract class PaginatableCommand<T extends PaginatableCommand.Pagination
     protected final void execute(SlashCommandEvent event) {
         final T data = collectData(event);
         if (data == null) return;
+        if (data.itemAmount() < 1) {
+            event.reply("No data found!").setEphemeral(true).queue();
+            return;
+        }
+
         event.deferReply().queue();
         final UUID btnId = buttonManager.newButton(e -> onButton(e, data));
         final var buttons = createButtons(btnId.toString(), 0, data.itemAmount());
