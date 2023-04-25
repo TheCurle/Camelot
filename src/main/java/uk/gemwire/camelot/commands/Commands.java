@@ -9,6 +9,7 @@ import uk.gemwire.camelot.commands.moderation.KickCommand;
 import uk.gemwire.camelot.commands.moderation.ModLogsCommand;
 import uk.gemwire.camelot.commands.moderation.MuteCommand;
 import uk.gemwire.camelot.commands.moderation.NoteCommand;
+import uk.gemwire.camelot.commands.moderation.PurgeCommand;
 import uk.gemwire.camelot.commands.moderation.UnbanCommand;
 import uk.gemwire.camelot.commands.moderation.UnmuteCommand;
 import uk.gemwire.camelot.commands.moderation.WarnCommand;
@@ -49,7 +50,7 @@ public class Commands {
                         new ModLogsCommand(BotMain.BUTTON_MANAGER),
                         new NoteCommand(), new WarnCommand(),
                         new MuteCommand(), new UnmuteCommand(),
-                        new KickCommand(),
+                        new KickCommand(), new PurgeCommand(),
                         new BanCommand(), new UnbanCommand()
                 )
 
