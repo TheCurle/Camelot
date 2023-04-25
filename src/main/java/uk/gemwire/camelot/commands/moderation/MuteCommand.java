@@ -13,6 +13,7 @@ import uk.gemwire.camelot.db.schemas.ModLogEntry;
 import uk.gemwire.camelot.util.DateUtils;
 
 import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
@@ -41,7 +42,7 @@ public class MuteCommand extends ModerationCommand<Void> {
     protected ModerationAction<Void> createEntry(SlashCommandEvent event) {
         final Member target = event.optMember("user");
         Preconditions.checkArgument(canModerate(target, event.getMember()), "Cannot moderate user!");
-        Preconditions.checkArgument(target.getTimeOutEnd() == null, "User is already muted!");
+        Preconditions.checkArgument(target.getTimeOutEnd() == null || target.getTimeOutEnd().isBefore(OffsetDateTime.now()), "User is already muted!");
 
         final Duration time = event.getOption("duration", MAX_DURATION, it -> DateUtils.getDurationFromInput(it.getAsString()));
         Preconditions.checkArgument(time.getSeconds() <= MAX_DURATION.getSeconds(), "Cannot mute for more than " + MAX_DURATION.toDays() + " days!");

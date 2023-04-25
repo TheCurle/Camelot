@@ -41,7 +41,7 @@ public class NoteCommand extends SlashCommand {
      */
     public static final class AddCommand extends ModerationCommand<Void> {
         public AddCommand() {
-            this.name = "note";
+            this.name = "add";
             this.help = "Add a note to an user";
             this.options = List.of(
                     new OptionData(OptionType.USER, "user", "The user to add a note to", true),
@@ -57,7 +57,7 @@ public class NoteCommand extends SlashCommand {
             final User target = event.optUser("user");
             Preconditions.checkArgument(target != null, "Unknown user");
             return new ModerationAction<>(
-                    ModLogEntry.note(target.getIdLong(), event.getGuild().getIdLong(), event.getUser().getIdLong(), event.optString("reason")),
+                    ModLogEntry.note(target.getIdLong(), event.getGuild().getIdLong(), event.getUser().getIdLong(), event.optString("note")),
                     null
             );
         }

@@ -12,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
 import uk.gemwire.camelot.db.schemas.ModLogEntry;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 /**
@@ -37,7 +38,7 @@ public class UnmuteCommand extends ModerationCommand<Void> {
     protected ModerationAction<Void> createEntry(SlashCommandEvent event) {
         final Member target = event.optMember("user");
         Preconditions.checkArgument(canModerate(target, event.getMember()), "Cannot moderate user!");
-        Preconditions.checkArgument(target.getTimeOutEnd() != null && Instant.now().isBefore(target.getTimeOutEnd().toInstant()), "User is not timed out!");
+        Preconditions.checkArgument(target.getTimeOutEnd() != null && target.getTimeOutEnd().isAfter(OffsetDateTime.now()), "User is not timed out!");
         return new ModerationAction<>(
                 ModLogEntry.unmute(target.getIdLong(), event.getGuild().getIdLong(), event.getUser().getIdLong(), event.optString("reason")),
                 null
