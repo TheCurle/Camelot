@@ -99,12 +99,13 @@ public abstract class ModerationCommand<T> extends SlashCommand {
      *
      * @param target    the user to be moderated
      * @param moderator the moderator
-     * @return if the target can be moderated
+     * @return if the target can be moderated, or {@code false} if the target and the moderators are the same user.
      */
     @ParametersAreNullableByDefault
     protected final boolean canModerate(Member target, Member moderator) {
         Preconditions.checkArgument(target != null, "Unknown user!");
         Preconditions.checkArgument(moderator != null, "Can only run command in guild!");
+        Preconditions.checkArgument(target.getIdLong() != moderator.getIdLong(), "Cannot moderate yourself!");
         final Guild guild = target.getGuild();
         return moderator.canInteract(target) && guild.getSelfMember().canInteract(target);
     }
