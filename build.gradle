@@ -51,6 +51,15 @@ dependencies {
     implementation group: 'org.jdbi', name: 'jdbi3-core', version: project.jdbi_version
     implementation group: 'org.jdbi', name: 'jdbi3-sqlobject', version: project.jdbi_version
     implementation group: 'org.xerial', name: 'sqlite-jdbc', version: project.sqlite_version
+
+    // TODO - fix these deps
+    implementation 'club.minnced:discord-webhooks:0.8.2'
+    implementation 'org.kohsuke:github-api:1.313'
+    implementation 'org.bouncycastle:bcpkix-jdk15on:1.58'
+    implementation 'io.jsonwebtoken:jjwt-api:0.10.5'
+    implementation 'io.jsonwebtoken:jjwt-impl:0.10.5'
+    implementation 'io.jsonwebtoken:jjwt-jackson:0.10.5'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.3'
 }
 
 jar {

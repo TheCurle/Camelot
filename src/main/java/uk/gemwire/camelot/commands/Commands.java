@@ -4,6 +4,7 @@ import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandClientBuilder;
 import uk.gemwire.camelot.BotMain;
 import uk.gemwire.camelot.commands.information.HelpCommand;
+import uk.gemwire.camelot.commands.information.InfoChannelCommand;
 import uk.gemwire.camelot.commands.moderation.BanCommand;
 import uk.gemwire.camelot.commands.moderation.KickCommand;
 import uk.gemwire.camelot.commands.moderation.ModLogsCommand;
@@ -53,6 +54,9 @@ public class Commands {
                         new KickCommand(), new PurgeCommand(),
                         new BanCommand(), new UnbanCommand()
                 )
+
+                // Information commands
+                .addSlashCommands(new InfoChannelCommand())
 
                 .build();
 

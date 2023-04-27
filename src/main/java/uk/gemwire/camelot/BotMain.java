@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sqlite.SQLiteDataSource;
 import uk.gemwire.camelot.commands.Commands;
+import uk.gemwire.camelot.commands.information.InfoChannelCommand;
 import uk.gemwire.camelot.configuration.Common;
 import uk.gemwire.camelot.configuration.Config;
 import uk.gemwire.camelot.db.transactionals.PendingUnbansDAO;
@@ -115,7 +116,7 @@ public class BotMain {
                 .disableCache(CacheFlag.VOICE_STATE, CacheFlag.ACTIVITY, CacheFlag.CLIENT_STATUS, CacheFlag.ONLINE_STATUS)
                 .setActivity(Activity.playing("the fiddle"))
                 .setMemberCachePolicy(MemberCachePolicy.ALL)
-                .addEventListeners(BUTTON_MANAGER, new ModerationActionRecorder())
+                .addEventListeners(BUTTON_MANAGER, new ModerationActionRecorder(), InfoChannelCommand.EVENT_LISTENER)
                 .build();
         Config.populate(instance);
 
@@ -137,6 +138,7 @@ public class BotMain {
                 }
             }
         }, 1, 1, TimeUnit.MINUTES);
+        EXECUTOR.scheduleAtFixedRate(InfoChannelCommand::run, 10, 20, TimeUnit.SECONDS);
     }
 
     /**

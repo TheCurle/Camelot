@@ -1,7 +1,10 @@
 package uk.gemwire.camelot.util;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 /**
  * General utility methods.
@@ -34,5 +37,24 @@ public class Utils {
                         .map(future -> future.getNow(null)) // The future had already been completed, so `getNow` will result the future's value
                         .toList()
         );
+    }
+
+    public static CompletableFuture<?> whenComplete(@Nullable CompletableFuture<?> existing, Supplier<CompletableFuture<?>> cf) {
+        if (existing == null) return cf.get();
+        final CompletableFuture<?> newCf = new CompletableFuture<>();
+        existing.whenComplete((o, throwable) -> {
+            if (throwable == null) {
+                cf.get().whenComplete((o1, throwable1) -> {
+                    if (throwable1 == null) {
+                        newCf.complete(null);
+                    } else {
+                        newCf.completeExceptionally(throwable1);
+                    }
+                });
+            } else {
+                newCf.completeExceptionally(throwable);
+            }
+        });
+        return newCf;
     }
 }

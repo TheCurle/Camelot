@@ -1,0 +1,21 @@
+- content: |-
+    # Rules
+    1. Do not ping people unnecessarily.
+  author:
+    name: "The Forge server"
+  embeds:
+  - description: "2. I hate you"
+    color: 536870911
+- content: "https://assets.tterrag.com/discord/forge-banner.jpeg"
+  author:
+    name: "Not the Forge server"
+- content: "kkk"
+  author:
+    name: "Info"
+- content: "not ok"
+  author:
+    name: "Info"
+- content: "alright"
+  author:
+    name: "Info"
+- content: "bai"
