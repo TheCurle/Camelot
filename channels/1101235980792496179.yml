@@ -22,3 +22,12 @@
   author:
     name: "Info"
 - content: "right...."
+  author:
+    name: "Info"
+- content: "https://assets.tterrag.com/discord/forge-banner.jpeg"
+  author:
+    name: "Spidey Bot"
+  embeds:
+  - title: "Okay"
+    description: "Maybe not"
+    color: 536870911
