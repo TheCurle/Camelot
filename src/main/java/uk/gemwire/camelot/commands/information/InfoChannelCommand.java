@@ -62,6 +62,7 @@ import uk.gemwire.camelot.util.jda.WebhookCache;
 import uk.gemwire.camelot.util.jda.WebhookManager;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpRequest;
@@ -81,6 +82,11 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+/**
+ * The command used for managing information channels.
+ *
+ * @author matyrobbrt
+ */
 public class InfoChannelCommand extends SlashCommand {
     public InfoChannelCommand() {
         this.name = "info-channel";
@@ -99,6 +105,9 @@ public class InfoChannelCommand extends SlashCommand {
 
     }
 
+    /**
+     * The command used to delete an info channel.
+     */
     public static final class Delete extends SlashCommand {
         public Delete() {
             this.name = "delete";
@@ -118,6 +127,9 @@ public class InfoChannelCommand extends SlashCommand {
         }
     }
 
+    /**
+     * The command used to add an info channel.
+     */
     public static final class Add extends SlashCommand {
         public Add() {
             this.name = "add";
@@ -149,6 +161,9 @@ public class InfoChannelCommand extends SlashCommand {
         }
     }
 
+    /**
+     * The command used to get the webhook URL of an info channel.
+     */
     public static final class GetWebhook extends SlashCommand {
         public GetWebhook() {
             this.name = "get-webhook";
@@ -167,6 +182,10 @@ public class InfoChannelCommand extends SlashCommand {
         }
     }
 
+    /**
+     * The context menu used to implement Discohook's "Restore to Discohook" functionality. <br>
+     * This context menu will give the user a Discohook link with the message content so they can easily edit it.
+     */
     public static final class UploadToDiscohookContextMenu extends MessageContextMenu {
         private static final URI SHARE_URL = URI.create("https://share.discohook.app/create");
 
@@ -249,11 +268,15 @@ public class InfoChannelCommand extends SlashCommand {
             .disable(YAMLGenerator.Feature.SPLIT_LINES)
     ).registerModule(new MessagesModule());
 
+    /**
+     * The info webhooks manager.
+     */
     private static final WebhookManager WEBHOOKS = new WebhookManager(
-            e -> e.startsWith("Info"),
+            e -> e.contains("Info"),
             "Info",
             AllowedMentions.none(),
-            web -> {}
+            web -> {
+            }
     );
 
     /**
@@ -276,42 +299,45 @@ public class InfoChannelCommand extends SlashCommand {
 
             try {
                 final GHContent content = ch.location().resolveAsDirectory(Config.GITHUB, ch.channel() + ".yml");
-                try (final var is = content.read()) {
+                try (final InputStream is = content.read()) {
                     final byte[] ct = is.readAllBytes();
                     final String hash = Hashing.sha256()
                             .hashBytes(ct)
                             .toString();
 
-                    if (Objects.equals(hash, ch.hash())) {
+                    if (Objects.equals(hash, ch.hash())) { // We don't want to update the channel content if the github contents haven't changed
                         return;
                     }
 
-                    final List<MessageData> data = MAPPER.readValue(ct, new TypeReference<>() {});
-                    if (data.isEmpty()) return;
+                    final List<MessageData> data = MAPPER.readValue(ct, new TypeReference<>() {
+                    });
+                    if (data.isEmpty()) return; // No reason to waste computing power if there's no messages
 
                     if (ch.forceRecreate()) {
                         messageChannel.getIterableHistory()
-                                .takeWhileAsync(e -> true)
+                                .takeWhileAsync(e -> true) // We want to delete all messages
                                 .whenComplete((msg, t) -> {
                                     if (t != null) {
                                         BotMain.LOGGER.error("Could not update info channel {}:", ch, t);
-                                    } else {
-                                        CompletableFuture.allOf(messageChannel.purgeMessages(msg).toArray(CompletableFuture[]::new))
-                                                .whenComplete((v, $t) -> {
-                                                    if ($t != null) {
-                                                        BotMain.LOGGER.error("Could not update info channel {}:", ch, $t);
-                                                    } else {
-                                                        UPDATING_CHANNELS.add(ch.channel());
-                                                        final Function<MessageData, CompletableFuture<?>> cfSend = getMessageSender(messageChannel);
-                                                        CompletableFuture<?> cf = null;
-                                                        for (final MessageData theMessage : data) {
-                                                            cf = Utils.whenComplete(cf, () -> cfSend.apply(theMessage));
-                                                        }
-                                                        cf.whenComplete((o, throwable) -> BotMain.EXECUTOR.schedule(() -> UPDATING_CHANNELS.remove(ch.channel()), 5, TimeUnit.SECONDS)); // Give some wiggle room in case of high latency
-                                                        BotMain.jdbi().useExtension(InfoChannelsDAO.class, db -> db.updateHash(ch.channel(), hash));
-                                                    }
-                                                });
+                                        return;
                                     }
+                                    CompletableFuture.allOf(messageChannel.purgeMessages(msg).toArray(CompletableFuture[]::new))
+                                            .whenComplete((v, $t) -> {
+                                                if ($t != null) {
+                                                    BotMain.LOGGER.error("Could not update info channel {}:", ch, $t);
+                                                    return;
+                                                }
+
+                                                // We want to make sure that we don't trigger updates via the delete / receive / update message events.
+                                                UPDATING_CHANNELS.add(ch.channel());
+                                                final Function<MessageData, CompletableFuture<?>> cfSend = getMessageSender(messageChannel);
+                                                CompletableFuture<?> cf = null;
+                                                for (final MessageData theMessage : data) {
+                                                    cf = Utils.whenComplete(cf, () -> cfSend.apply(theMessage));
+                                                }
+                                                cf.whenComplete((o, throwable) -> BotMain.EXECUTOR.schedule(() -> UPDATING_CHANNELS.remove(ch.channel()), 5, TimeUnit.SECONDS)); // Give some wiggle room in case of high latency
+                                                BotMain.jdbi().useExtension(InfoChannelsDAO.class, db -> db.updateHash(ch.channel(), hash));
+                                            });
                                 });
                     } else {
                         messageChannel.getIterableHistory()
@@ -319,37 +345,44 @@ public class InfoChannelCommand extends SlashCommand {
                                 .whenComplete((msg, t) -> {
                                     if (t != null) {
                                         BotMain.LOGGER.error("Could not update info channel {}:", ch, t);
-                                    } else {
-                                        final var msgEdit = getMessageEdit(messageChannel);
-                                        final var msgSend = getMessageSender(messageChannel);
-                                        CompletableFuture<?> cf = null;
-
-                                        msg.removeIf(ms -> {
-                                            if (ms.getAuthor().getIdLong() != ms.getJDA().getSelfUser().getIdLong()) {
-                                                ms.delete().queue();
-                                                return true;
-                                            }
-                                            return false;
-                                        });
-                                        UPDATING_CHANNELS.add(ch.channel());
-
-                                        for (final MessageData theMessage : data) {
-                                            if (msg.isEmpty()) {
-                                                cf = Utils.whenComplete(cf, () -> msgSend.apply(theMessage));
-                                            } else {
-                                                final Message message = msg.get(msg.size() - 1);
-                                                cf = Utils.whenComplete(cf, () -> msgEdit.apply(message.getIdLong(), theMessage));
-                                                msg.remove(message);
-                                            }
-                                        }
-
-                                        if (!msg.isEmpty()) {
-                                            RestAction.allOf(msg.stream().map(Message::delete).toList()).queue();
-                                        }
-
-                                        cf.whenComplete((o, throwable) -> BotMain.EXECUTOR.schedule(() -> UPDATING_CHANNELS.remove(ch.channel()), 5, TimeUnit.SECONDS)); // Give some wiggle room in case of high latency
-                                        BotMain.jdbi().useExtension(InfoChannelsDAO.class, db -> db.updateHash(ch.channel(), hash));
+                                        return;
                                     }
+                                    final long senderId = messageChannel instanceof IWebhookContainer web ?
+                                            WEBHOOKS.getWebhook(web).getId() : messageChannel.getJDA().getSelfUser().getIdLong();
+                                    final var msgEdit = getMessageEdit(messageChannel);
+                                    final var msgSend = getMessageSender(messageChannel);
+                                    CompletableFuture<?> cf = null;
+
+                                    // Delete messages we can't edit
+                                    msg.removeIf(ms -> {
+                                        if (ms.getAuthor().getIdLong() != senderId) {
+                                            ms.delete().queue();
+                                            return true;
+                                        }
+                                        return false;
+                                    });
+
+                                    // We want to make sure that we don't trigger updates via the delete / receive / update message events.
+                                    UPDATING_CHANNELS.add(ch.channel());
+
+                                    for (final MessageData theMessage : data) {
+                                        if (msg.isEmpty()) {
+                                            // If we have no remaining messages to update, then just send normal messages
+                                            cf = Utils.whenComplete(cf, () -> msgSend.apply(theMessage));
+                                        } else {
+                                            final Message message = msg.get(msg.size() - 1);
+                                            cf = Utils.whenComplete(cf, () -> msgEdit.apply(message.getIdLong(), theMessage));
+                                            msg.remove(message);
+                                        }
+                                    }
+
+                                    // Delete excess messages
+                                    if (!msg.isEmpty()) {
+                                        RestAction.allOf(msg.stream().map(Message::delete).toList()).queue();
+                                    }
+
+                                    cf.whenComplete((o, throwable) -> BotMain.EXECUTOR.schedule(() -> UPDATING_CHANNELS.remove(ch.channel()), 5, TimeUnit.SECONDS)); // Give some wiggle room in case of high latency
+                                    BotMain.jdbi().useExtension(InfoChannelsDAO.class, db -> db.updateHash(ch.channel(), hash));
                                 });
                     }
                 }
@@ -385,36 +418,47 @@ public class InfoChannelCommand extends SlashCommand {
         return (id, messageData) -> channel.editMessageById(id, MessageEditBuilder.fromCreateData(messageData.data).build()).submit();
     }
 
+    /**
+     * A list of info channels that are being updated. Channels in this list will be ignored in the {@link #EVENT_LISTENER}.
+     */
     private static final List<Long> UPDATING_CHANNELS = new CopyOnWriteArrayList<>();
 
+    /**
+     * An event listener that listeners for updates in info channels, and updates the content on GitHub accordingly.
+     */
     public static final EventListener EVENT_LISTENER = gevent -> {
         final MessageChannel channel;
+        // Message edits and updates give us the message
         if (gevent instanceof MessageReceivedEvent event && event.isFromGuild()) {
             channel = event.getMessage().getChannel();
         } else if (gevent instanceof MessageUpdateEvent event && event.isFromGuild()) {
             channel = event.getMessage().getChannel();
         } else if (gevent instanceof MessageDeleteEvent event && event.isFromGuild()) {
+            // But deletes don't
             channel = event.getChannel();
         } else {
             return;
         }
 
+        // If the channel isn't an info channel or is being updated, early-exit
         final InfoChannel infoChannel = BotMain.jdbi().withExtension(InfoChannelsDAO.class, db -> db.getChannel(channel.getIdLong()));
         if (infoChannel == null || Config.GITHUB == null || UPDATING_CHANNELS.contains(infoChannel.channel())) return;
+
+        // Now let's dump the channel
         channel.getIterableHistory()
-                .takeWhileAsync(e -> true)
+                .takeWhileAsync(e -> true) // Retrieve all messages
                 .whenComplete((msg, t) -> {
                     if (t != null) {
                         BotMain.LOGGER.error("Could not retrieve messages in info channel {}:", infoChannel, t);
                     } else {
                         try {
                             Collections.reverse(msg); // We receive newest to oldest
-                            final String dump = MAPPER.writer().writeValueAsString(msg);
+                            final String dump = MAPPER.writer().writeValueAsString(msg); // Format the messages
                             infoChannel.location().updateInDirectory(
                                     Config.GITHUB, infoChannel.channel() + ".yml",
                                     "Updated info channel content: " + infoChannel.channel(),
                                     dump
-                            );
+                            ); // Finally, update the messages on VCS
                         } catch (Exception e) {
                             BotMain.LOGGER.error("Could not update messages on GitHub {}:", infoChannel, e);
                         }
@@ -422,7 +466,10 @@ public class InfoChannelCommand extends SlashCommand {
                 });
     };
 
-    public static final class MessagesModule extends SimpleModule {
+    /**
+     * A module used to serialize and deserialize messages from yaml for info channels.
+     */
+    private static final class MessagesModule extends SimpleModule {
 
         public MessagesModule() {
             super("MessagesModule");
@@ -624,5 +671,13 @@ public class InfoChannelCommand extends SlashCommand {
         }
     }
 
-    public record MessageData(MessageCreateData data, @Nullable String authorName, @Nullable String avatarUrl) {}
+    /**
+     * A message that may also have a webhook name and avatar specified.
+     *
+     * @param data       the message
+     * @param authorName the webhook name
+     * @param avatarUrl  the webhook avatar url
+     */
+    public record MessageData(MessageCreateData data, @Nullable String authorName, @Nullable String avatarUrl) {
+    }
 }

@@ -24,12 +24,22 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
 
+/**
+ * Class containing a few helper methods for creating {@link AuthorizationProvider} for GitHub connections.
+ */
 public class AuthUtil {
     private static final String PKCS1_KEY_START = "-----BEGIN RSA PRIVATE KEY-----\n";
     private static final String PKCS1_KEY_END = "-----END RSA PRIVATE KEY-----";
     private static final String PKCS8_KEY_START = "-----BEGIN PRIVATE KEY-----\n";
     private static final String PKCS8_KEY_END = "-----END PRIVATE KEY-----";
 
+    /**
+     * Parse and convert the given key, if necessary, to the PKCS8 format.
+     *
+     * @param input the key to parse
+     * @return a byte array containing the converted key
+     * @throws IOException if the key could not be converted
+     */
     public static byte[] parsePKCS8(String input) throws IOException {
         if (input.startsWith(PKCS8_KEY_START)) {
             input = input.replace(PKCS8_KEY_START, "").replace(PKCS8_KEY_END, "").replaceAll("\\s", "");
@@ -43,7 +53,15 @@ public class AuthUtil {
         }
     }
 
-    public static AuthorizationProvider withJwt(String appId, byte[] key, String owner) throws NoSuchAlgorithmException, InvalidKeySpecException {
+    /**
+     * Creates an {@link AuthorizationProvider} that connects to a GitHub application.
+     *
+     * @param appId the ID of the app
+     * @param key   the key of the app, in {@link #parsePKCS8(String) PKCS8} format
+     * @param owner the application installation owner
+     * @return the authorization provider
+     */
+    public static AuthorizationProvider githubApp(String appId, byte[] key, String owner) throws NoSuchAlgorithmException, InvalidKeySpecException {
         final PrivateKey privateKey = KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(key));
         return new AuthorizationProvider() {
             @Override
@@ -52,6 +70,7 @@ public class AuthUtil {
             }
 
             private Jwt jwt = null;
+
             public String jwt() throws IOException {
                 final Instant now = Instant.now();
                 if (jwt == null) {
@@ -85,5 +104,6 @@ public class AuthUtil {
         return builder.compact();
     }
 
-    public record Jwt(Instant expirationDate, String jwt) {}
+    public record Jwt(Instant expirationDate, String jwt) {
+    }
 }

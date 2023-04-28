@@ -101,7 +101,7 @@ public class Config {
                 return null;
             }
             return new GitHubBuilder()
-                .withAuthorizationProvider(AuthUtil.withJwt(
+                .withAuthorizationProvider(AuthUtil.githubApp(
                         githubAppId, AuthUtil.parsePKCS8(Files.readString(keyPath)), githubInstallationOwner
                 ))
                 .build();
