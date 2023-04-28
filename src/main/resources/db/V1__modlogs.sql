@@ -23,4 +23,4 @@ create table pending_unbans
     guild    unsigned big int,
     deadline datetime not null, -- when to unban the user --
     constraint pending_unbans_keys primary key (user, guild)
-);
+) without rowid;
