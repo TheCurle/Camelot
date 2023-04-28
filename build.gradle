@@ -52,15 +52,22 @@ dependencies {
     implementation group: 'org.jdbi', name: 'jdbi3-sqlobject', version: project.jdbi_version
     implementation group: 'org.xerial', name: 'sqlite-jdbc', version: project.sqlite_version
 
-    // TODO - fix these deps
-    implementation 'club.minnced:discord-webhooks:0.8.2'
-    implementation 'org.kohsuke:github-api:1.313'
-    implementation 'org.bouncycastle:bcpkix-jdk15on:1.58'
-    implementation 'io.jsonwebtoken:jjwt-api:0.10.5'
-    implementation 'io.jsonwebtoken:jjwt-impl:0.10.5'
-    implementation 'io.jsonwebtoken:jjwt-jackson:0.10.5'
-    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.3'
-    implementation 'net.sf.trove4j:trove4j:3.0.3'
+    // YML parsing and generation
+    implementation group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: project.jackson_version
+
+    // GitHub API interaction library
+    implementation group: 'org.kohsuke', name: 'github-api', version: project.ghapi_version
+    // GitHub api JWT generation
+    implementation group: 'io.jsonwebtoken', name: 'jjwt-api', version: project.jjwt_version
+    implementation group: 'io.jsonwebtoken', name: 'jjwt-impl', version: project.jjwt_version
+    implementation group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: project.jjwt_version
+    // Converting private keys for GitHub auth
+    implementation group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: project.bcpkix_version
+
+    // JDA runtime dependency that we use for custom snowflake views
+    implementation group: 'net.sf.trove4j', name: 'trove4j', version: project.trove4j_version
+
+    implementation group: 'club.minnced', name: 'discord-webhooks', version: project.discord_webhooks_version
 }
 
 jar {
