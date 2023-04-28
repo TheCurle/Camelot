@@ -60,6 +60,7 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-impl:0.10.5'
     implementation 'io.jsonwebtoken:jjwt-jackson:0.10.5'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.3'
+    implementation 'net.sf.trove4j:trove4j:3.0.3'
 }
 
 jar {

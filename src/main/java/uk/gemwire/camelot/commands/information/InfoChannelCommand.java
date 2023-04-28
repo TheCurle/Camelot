@@ -7,7 +7,6 @@ import club.minnced.discord.webhook.send.WebhookMessageBuilder;
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -22,17 +21,21 @@ import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.google.common.hash.Hashing;
+import com.jagrosh.jdautilities.command.MessageContextMenu;
+import com.jagrosh.jdautilities.command.MessageContextMenuEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.JDAInfo;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.EmbedType;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.Webhook;
 import net.dv8tion.jda.api.entities.channel.attribute.IWebhookContainer;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
-import net.dv8tion.jda.api.events.message.GenericMessageEvent;
+import net.dv8tion.jda.api.events.message.MessageDeleteEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
 import net.dv8tion.jda.api.hooks.EventListener;
@@ -41,6 +44,9 @@ import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.requests.RestAction;
+import net.dv8tion.jda.api.utils.TimeFormat;
+import net.dv8tion.jda.api.utils.data.DataArray;
+import net.dv8tion.jda.api.utils.data.DataObject;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
@@ -52,18 +58,28 @@ import uk.gemwire.camelot.db.schemas.GithubLocation;
 import uk.gemwire.camelot.db.schemas.InfoChannel;
 import uk.gemwire.camelot.db.transactionals.InfoChannelsDAO;
 import uk.gemwire.camelot.util.Utils;
-import uk.gemwire.camelot.util.WebhookManager;
+import uk.gemwire.camelot.util.jda.WebhookCache;
+import uk.gemwire.camelot.util.jda.WebhookManager;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Base64;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class InfoChannelCommand extends SlashCommand {
     public InfoChannelCommand() {
@@ -73,7 +89,8 @@ public class InfoChannelCommand extends SlashCommand {
         };
         this.children = new SlashCommand[] {
                 new Add(),
-                new Delete()
+                new Delete(),
+                new GetWebhook()
         };
     }
 
@@ -132,7 +149,106 @@ public class InfoChannelCommand extends SlashCommand {
         }
     }
 
-    public static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory().disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER).enable(YAMLGenerator.Feature.LITERAL_BLOCK_STYLE)).registerModule(new MessagesModule());
+    public static final class GetWebhook extends SlashCommand {
+        public GetWebhook() {
+            this.name = "get-webhook";
+            this.help = "Gets the webhook URL for this channel";
+        }
+
+        @Override
+        protected void execute(SlashCommandEvent event) {
+            final InfoChannel ch = BotMain.jdbi().withExtension(InfoChannelsDAO.class, db -> db.getChannel(event.getChannel().getIdLong()));
+            if (ch == null || !(event.getChannel() instanceof IWebhookContainer web)) {
+                event.reply("This channel is not an info channel with webhook support!").setEphemeral(true).queue();
+                return;
+            }
+
+            event.reply("`" + WEBHOOKS.getWebhook(web).getUrl() + "`").setEphemeral(true).queue();
+        }
+    }
+
+    public static final class UploadToDiscohookContextMenu extends MessageContextMenu {
+        private static final URI SHARE_URL = URI.create("https://share.discohook.app/create");
+
+        public UploadToDiscohookContextMenu() {
+            this.name = "Upload to Discohook";
+            this.guildOnly = true;
+            this.userPermissions = new Permission[] {
+                    Permission.MESSAGE_MANAGE
+            };
+        }
+
+        @Override
+        protected void execute(MessageContextMenuEvent event) {
+            if (!event.getTarget().isWebhookMessage()) {
+                event.reply("Message is not sent by webhook!")
+                        .setEphemeral(true).queue();
+                return;
+            }
+
+            event.deferReply(true).queue();
+
+            final Message message = event.getTarget();
+            event.getJDA().retrieveWebhookById(message.getAuthor().getId())
+                    .submit()
+                    .thenApply(webhook -> {
+                        final List<DataObject> embeds = message.getEmbeds()
+                                .stream().filter(it -> it.getType() == EmbedType.RICH)
+                                .map(MessageEmbed::toData).toList();
+
+                        for (final DataObject obj : embeds) {
+                            obj.remove("type");
+                            obj.remove("video");
+                            obj.remove("provider");
+                            Stream.concat(obj.optObject("image").stream(), obj.optObject("thumbnail").stream())
+                                    .peek(oo -> oo.remove("width").remove("height").remove("proxy_url")).close();
+
+                            Stream.concat(obj.optObject("footer").stream(), obj.optObject("author").stream())
+                                    .peek(oo -> oo.remove("proxy_icon_url")).close();
+                        }
+
+                        final DataObject json = DataObject.empty();
+                        final DataObject data = DataObject.empty()
+                                .put("content", event.getTarget().getContentRaw())
+                                .put("embeds", embeds.isEmpty() ? null : DataArray.fromCollection(embeds));
+                        json.put("data", data);
+
+                        json.put("reference", message.getJumpUrl());
+
+                        return DataObject.empty()
+                                .put("messages", DataArray.fromCollection(List.of(json)))
+                                .put("targets", DataArray.empty()
+                                        .add(DataObject.empty()
+                                                .put("url", webhook.getUrl().replace("/v" + JDAInfo.DISCORD_REST_VERSION, "")))); // Seems like Discohook doesn't like the API version
+                    })
+                    .thenApply(db -> URLEncoder.encode(Base64.getEncoder().encodeToString(db.toString().getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8))
+                    .thenCompose(base64 -> BotMain.HTTP_CLIENT.sendAsync(HttpRequest.newBuilder()
+                            .POST(HttpRequest.BodyPublishers.ofString(DataObject.empty()
+                                    .put("url", "https://discohook.app/?data=" + base64)
+                                    .put("ttl", -1)
+                                    .toString()))
+                            .header("Content-Type", "application/json")
+                            .uri(SHARE_URL)
+                            .build(), HttpResponse.BodyHandlers.ofString()))
+                    .thenApply(res -> DataObject.fromJson(res.body()))
+                    .thenCompose(response -> event.getHook().sendMessage(new MessageCreateBuilder()
+                            .addEmbeds(new EmbedBuilder()
+                                    .setTitle("Restored message")
+                                    .setDescription("The restored message can be found at %s. This link will expire %s.".formatted(
+                                            response.get("url"), TimeFormat.RELATIVE.format(Instant.parse(response.getString("expires")))
+                                    ))
+                                    .build())
+                            .build()).submit());
+        }
+    }
+
+    public static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory()
+            .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
+            .enable(YAMLGenerator.Feature.LITERAL_BLOCK_STYLE)
+            .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
+            .disable(YAMLGenerator.Feature.SPLIT_LINES)
+    ).registerModule(new MessagesModule());
+
     private static final WebhookManager WEBHOOKS = new WebhookManager(
             e -> e.startsWith("Info"),
             "Info",
@@ -140,6 +256,9 @@ public class InfoChannelCommand extends SlashCommand {
             web -> {}
     );
 
+    /**
+     * Update the info channels to make sure they're not outdated.
+     */
     public static void run() {
         final List<InfoChannel> channels = BotMain.jdbi().withExtension(InfoChannelsDAO.class, InfoChannelsDAO::getChannels);
         for (final InfoChannel ch : channels) {
@@ -269,18 +388,20 @@ public class InfoChannelCommand extends SlashCommand {
     private static final List<Long> UPDATING_CHANNELS = new CopyOnWriteArrayList<>();
 
     public static final EventListener EVENT_LISTENER = gevent -> {
-        final Message message;
+        final MessageChannel channel;
         if (gevent instanceof MessageReceivedEvent event && event.isFromGuild()) {
-            message = event.getMessage();
+            channel = event.getMessage().getChannel();
         } else if (gevent instanceof MessageUpdateEvent event && event.isFromGuild()) {
-            message = event.getMessage();
+            channel = event.getMessage().getChannel();
+        } else if (gevent instanceof MessageDeleteEvent event && event.isFromGuild()) {
+            channel = event.getChannel();
         } else {
             return;
         }
 
-        final InfoChannel infoChannel = BotMain.jdbi().withExtension(InfoChannelsDAO.class, db -> db.getChannel(message.getChannel().getIdLong()));
+        final InfoChannel infoChannel = BotMain.jdbi().withExtension(InfoChannelsDAO.class, db -> db.getChannel(channel.getIdLong()));
         if (infoChannel == null || Config.GITHUB == null || UPDATING_CHANNELS.contains(infoChannel.channel())) return;
-        message.getChannel().getIterableHistory()
+        channel.getIterableHistory()
                 .takeWhileAsync(e -> true)
                 .whenComplete((msg, t) -> {
                     if (t != null) {
@@ -295,13 +416,12 @@ public class InfoChannelCommand extends SlashCommand {
                                     dump
                             );
                         } catch (Exception e) {
-                            BotMain.LOGGER.error("Could not update messages on GitHub {}:", infoChannel, t);
+                            BotMain.LOGGER.error("Could not update messages on GitHub {}:", infoChannel, e);
                         }
                     }
                 });
     };
 
-    // TODO - if the message was sent by a webhook, make sure it's not the default webhook
     public static final class MessagesModule extends SimpleModule {
 
         public MessagesModule() {
@@ -326,7 +446,7 @@ public class InfoChannelCommand extends SlashCommand {
                     ifNotNull("title", value.getTitle(), gen);
                     ifNotNull("description", value.getDescription(), gen);
                     gen.writeFieldName("color");
-                    gen.writeNumber(value.getColorRaw());
+                    gen.writeString(Utils.rgbToString(value.getColorRaw()));
 
                     if (!value.getFields().isEmpty()) {
                         gen.writeFieldName("fields");
@@ -365,15 +485,28 @@ public class InfoChannelCommand extends SlashCommand {
 
                     ifNotNull("content", value.getContentRaw(), gen);
                     if (value.isWebhookMessage()) {
-                        gen.writeFieldName("author");
-                        gen.writeStartObject();
-                        ifNotNull("name", value.getAuthor().getName(), gen);
-                        if (!value.getAuthor().getDefaultAvatarUrl().equals(value.getAuthor().getAvatarUrl()))
-                            ifNotNull("avatar", value.getAuthor().getAvatarUrl(), gen);
-                        gen.writeEndObject();
+                        final Webhook webhook = WebhookCache.of(value.getJDA())
+                                .retrieveWebhookById(value.getAuthor().getIdLong()).submit(true).join();
+                        final Map<String, String> data = new HashMap<>();
+                        if (!value.getAuthor().getName().equals(webhook.getDefaultUser().getName()))
+                            data.put("name", value.getAuthor().getName());
+                        if (!Objects.equals(value.getAuthor().getAvatarUrl(), webhook.getDefaultUser().getAvatarUrl()) && value.getAuthor().getAvatarUrl() != null)
+                            data.put("avatar", value.getAuthor().getAvatarUrl());
+
+                        if (!data.isEmpty()) {
+                            gen.writeFieldName("author");
+                            gen.writeStartObject();
+
+                            for (final var entry : data.entrySet()) {
+                                gen.writeFieldName(entry.getKey());
+                                gen.writeString(entry.getValue());
+                            }
+
+                            gen.writeEndObject();
+                        }
                     }
 
-                    final var actualEmbeds = value.getEmbeds().stream().filter(it -> it.getType() == EmbedType.RICH).toList();
+                    final List<MessageEmbed> actualEmbeds = value.getEmbeds().stream().filter(it -> it.getType() == EmbedType.RICH).toList();
                     if (!actualEmbeds.isEmpty()) {
                         gen.writeFieldName("embeds");
                         gen.writeStartArray();
@@ -425,7 +558,7 @@ public class InfoChannelCommand extends SlashCommand {
         }
 
         private static void ifNotNull(String key, String value, JsonGenerator generator) throws IOException {
-            if (value != null) {
+            if (value != null && !value.isBlank()) {
                 generator.writeFieldName(key);
                 generator.writeString(value);
             }
@@ -447,7 +580,10 @@ public class InfoChannelCommand extends SlashCommand {
             final EmbedBuilder builder = new EmbedBuilder()
                     .setTitle(getString(node, "title"))
                     .setDescription(getString(node, "description"))
-                    .setColor(Objects.requireNonNullElse(get(node, "color", JsonNode::asInt), Role.DEFAULT_COLOR_RAW))
+                    .setColor(Objects.requireNonNullElse(get(node, "color", cl ->
+                            cl.getNodeType() == JsonNodeType.NUMBER ? cl.asInt() : Integer.parseUnsignedInt(
+                                    cl.asText().startsWith("#") ? cl.asText().substring(1) : cl.asText(), 16
+                            )), Role.DEFAULT_COLOR_RAW))
                     .setThumbnail(getString(node, "thumbnail"))
                     .setImage(getString(node, "image"));
 

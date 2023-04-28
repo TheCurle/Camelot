@@ -57,4 +57,11 @@ public class Utils {
         });
         return newCf;
     }
+
+    /**
+     * Converts the given {@code rbg} colour to a string.
+     */
+    public static String rgbToString(int rgb) {
+        return String.format("#%06X", (0xFFFFFF & rgb));
+    }
 }

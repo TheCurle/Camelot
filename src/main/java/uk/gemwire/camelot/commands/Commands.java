@@ -58,6 +58,9 @@ public class Commands {
                 // Information commands
                 .addSlashCommands(new InfoChannelCommand())
 
+                // Message context menus
+                .addContextMenus(new InfoChannelCommand.UploadToDiscohookContextMenu())
+
                 .build();
 
         // Register the commands to the listener.

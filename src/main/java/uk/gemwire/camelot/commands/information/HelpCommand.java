@@ -1,25 +1,16 @@
 package uk.gemwire.camelot.commands.information;
 
 import com.jagrosh.jdautilities.command.Command;
-import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.emoji.Emoji;
-import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.Interaction;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.ItemComponent;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
-import org.jetbrains.annotations.NotNull;
 import uk.gemwire.camelot.BotMain;
 import uk.gemwire.camelot.commands.Commands;
 import uk.gemwire.camelot.commands.PaginatableCommand;
 import uk.gemwire.camelot.configuration.Common;
-import uk.gemwire.camelot.util.ButtonManager;
+import uk.gemwire.camelot.util.jda.ButtonManager;
 
 import java.time.Instant;
 import java.util.List;

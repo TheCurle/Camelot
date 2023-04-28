@@ -14,7 +14,7 @@ import uk.gemwire.camelot.BotMain;
 import uk.gemwire.camelot.commands.PaginatableCommand;
 import uk.gemwire.camelot.db.schemas.ModLogEntry;
 import uk.gemwire.camelot.db.transactionals.ModLogsDAO;
-import uk.gemwire.camelot.util.ButtonManager;
+import uk.gemwire.camelot.util.jda.ButtonManager;
 import uk.gemwire.camelot.util.Utils;
 
 import java.util.List;

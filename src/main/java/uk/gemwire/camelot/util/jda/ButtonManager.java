@@ -1,4 +1,4 @@
-package uk.gemwire.camelot.util;
+package uk.gemwire.camelot.util.jda;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;

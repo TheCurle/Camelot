@@ -22,9 +22,10 @@ import uk.gemwire.camelot.configuration.Common;
 import uk.gemwire.camelot.configuration.Config;
 import uk.gemwire.camelot.db.transactionals.PendingUnbansDAO;
 import uk.gemwire.camelot.log.ModerationActionRecorder;
-import uk.gemwire.camelot.util.ButtonManager;
+import uk.gemwire.camelot.util.jda.ButtonManager;
 
 import java.io.IOException;
+import java.net.http.HttpClient;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -71,6 +72,11 @@ public class BotMain {
      * The static {@link ScheduledExecutorService} for scheduling tasks.
      */
     public static final ScheduledExecutorService EXECUTOR = Executors.newScheduledThreadPool(2);
+
+    /**
+     * The static {@link HttpClient} instance used for http requests.
+     */
+    public static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
 
     /**
      * Static instance of the bot. Can be accessed by any class with {@link #get()}
@@ -138,7 +144,9 @@ public class BotMain {
                 }
             }
         }, 1, 1, TimeUnit.MINUTES);
-        EXECUTOR.scheduleAtFixedRate(InfoChannelCommand::run, 10, 20, TimeUnit.SECONDS);
+
+        // Update info channels every couple of minutes
+        EXECUTOR.scheduleAtFixedRate(InfoChannelCommand::run, 1, 2, TimeUnit.MINUTES);
     }
 
     /**

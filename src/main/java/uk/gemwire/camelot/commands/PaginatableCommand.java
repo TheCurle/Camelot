@@ -11,7 +11,7 @@ import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import org.jetbrains.annotations.Nullable;
 import uk.gemwire.camelot.BotMain;
-import uk.gemwire.camelot.util.ButtonManager;
+import uk.gemwire.camelot.util.jda.ButtonManager;
 
 import java.util.ArrayList;
 import java.util.List;
