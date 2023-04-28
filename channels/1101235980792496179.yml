@@ -12,8 +12,7 @@
 - content: "kkk"
   author:
     name: "Info"
-- content: ""
-  author:
+- author:
     name: "Info"
   embeds:
   - title: "Problems with OptiFine installed"
@@ -44,3 +43,9 @@
   - title: "Okay"
     description: "Maybe not"
     color: 536870911
+- author:
+    name: "Info"
+  embeds:
+  - title: "Not Problems with OptiFine installed?"
+    description: "....."
+    color: 16228099
