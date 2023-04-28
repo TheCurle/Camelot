@@ -5,7 +5,7 @@
     name: The Forge server
   embeds:
   - description: 2. I hate you
-    color: '#ffffff'
+    color: '#FFFFFF'
 - content: https://assets.tterrag.com/discord/forgea-banner.jpeg
   author:
     name: Not the Forge server
@@ -20,7 +20,7 @@
       OptiFine is known to break mods in inexplicable ways due to the way how intrusive it is.
       A lot of rendering related issues (and not only) can be caused by OptiFine, which is why we recommend uninstalling it to see if the issue persists without it.
       If you want to keep OptiFine, you should at least dowgrade to the *exact* version of Forge it is marked as compatible with.
-    color: '#9f03'
+    color: '#009F03'
     fields:
     - name: Tip!
       value: "A lot of OptiFine features are implemented by other mods. LambdAurora [has compiled](https://lambdaurora.dev/optifine_alternatives/) a list of OptiFine alternatives."
@@ -40,22 +40,28 @@
   embeds:
   - title: Okay
     description: Maybe not
-    color: '#ffffff'
+    color: '#FFFFFF'
 - author:
     name: Info
   embeds:
   - title: Not Problems with OptiFine installed?
     description: '.....'
-    color: '#9f03'
+    color: '#009F03'
 - author:
     name: Info
   embeds:
   - title: '.....'
     description: '.....'
-    color: '#7f3'
+    color: '#0007F3'
 - author:
     name: Info
   embeds:
   - title: '.....'
     description: '.....'
-    color: '#a5a4'
+    color: '#00A5A4'
+- author:
+    name: Info
+  embeds:
+  - title: '.....'
+    description: '.....'
+    color: '#A55C5C'
