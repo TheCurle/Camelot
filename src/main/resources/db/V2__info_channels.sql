@@ -9,4 +9,4 @@ create table info_channels
     force_recreate boolean          not null,
     -- last known content hash --
     hash           text
-);
+) without rowid;
