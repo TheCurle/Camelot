@@ -12,9 +12,22 @@
 - content: "kkk"
   author:
     name: "Info"
-- content: "not ok"
+- content: ""
   author:
     name: "Info"
+  embeds:
+  - title: "Problems with OptiFine installed"
+    description: |-
+      OptiFine is known to break mods in inexplicable ways due to the way how intrusive it is.
+      A lot of rendering related issues (and not only) can be caused by OptiFine, which is why we recommend uninstalling it to see if the issue persists without it.
+      If you want to keep OptiFine, you should at least dowgrade to the *exact* version of Forge it is marked as compatible with.
+    color: 16228099
+    fields:
+    - name: "Tip!"
+      value: "A lot of OptiFine features are implemented by other mods. LambdAurora\
+        \ [has compiled](https://lambdaurora.dev/optifine_alternatives/) a list of\
+        \ OptiFine alternatives."
+      inline: true
 - content: "alright"
   author:
     name: "Info"
