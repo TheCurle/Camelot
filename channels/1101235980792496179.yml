@@ -10,10 +10,8 @@
   author:
     name: Not the Forge server
 - content: kkk
-  author:
-    name: Info
-- author:
-    name: Info
+  author: {}
+- author: {}
   embeds:
   - title: Problems with OptiFine installed
     description: |-
@@ -26,14 +24,11 @@
       value: "A lot of OptiFine features are implemented by other mods. LambdAurora [has compiled](https://lambdaurora.dev/optifine_alternatives/) a list of OptiFine alternatives."
       inline: true
 - content: alright
-  author:
-    name: Info
+  author: {}
 - content: bai
-  author:
-    name: Info
+  author: {}
 - content: right....
-  author:
-    name: Info
+  author: {}
 - content: https://assets.tterrag.com/discord/forge-banner.jpeg
   author:
     name: Spidey Bot
@@ -41,27 +36,15 @@
   - title: Okay
     description: Maybe not
     color: '#FFFFFF'
-- author:
-    name: Info
+- author: {}
   embeds:
   - title: Not Problems with OptiFine installed?
     description: '.....'
     color: '#009F03'
 - author:
-    name: Info
+    name: Matyrobbrt
+    avatar: https://cdn.discordapp.com/avatars/1101239691849765028/7ae33a371d09b8193411e589047a65cc.png
   embeds:
   - title: '.....'
-    description: '.....'
-    color: '#0007F3'
-- author:
-    name: Info
-  embeds:
-  - title: '.....'
-    description: '.....'
-    color: '#00A5A4'
-- author:
-    name: Info
-  embeds:
-  - title: '.....'
-    description: '.....'
-    color: '#A55C5C'
+    description: hello world
+    color: '#5C5FA5'
