@@ -2,50 +2,54 @@
     # Rules
     1. Do not ping people unnecessarily.
   author:
-    name: "The Forge server"
+    name: The Forge server
   embeds:
-  - description: "2. I hate you"
-    color: 536870911
-- content: "https://assets.tterrag.com/discord/forgea-banner.jpeg"
+  - description: 2. I hate you
+    color: '#1fffffff'
+- content: https://assets.tterrag.com/discord/forgea-banner.jpeg
   author:
-    name: "Not the Forge server"
-- content: "kkk"
+    name: Not the Forge server
+- content: kkk
   author:
-    name: "Info"
+    name: Info
 - author:
-    name: "Info"
+    name: Info
   embeds:
-  - title: "Problems with OptiFine installed"
+  - title: Problems with OptiFine installed
     description: |-
       OptiFine is known to break mods in inexplicable ways due to the way how intrusive it is.
       A lot of rendering related issues (and not only) can be caused by OptiFine, which is why we recommend uninstalling it to see if the issue persists without it.
       If you want to keep OptiFine, you should at least dowgrade to the *exact* version of Forge it is marked as compatible with.
-    color: 16228099
+    color: '#f79f03'
     fields:
-    - name: "Tip!"
-      value: "A lot of OptiFine features are implemented by other mods. LambdAurora\
-        \ [has compiled](https://lambdaurora.dev/optifine_alternatives/) a list of\
-        \ OptiFine alternatives."
+    - name: Tip!
+      value: "A lot of OptiFine features are implemented by other mods. LambdAurora [has compiled](https://lambdaurora.dev/optifine_alternatives/) a list of OptiFine alternatives."
       inline: true
-- content: "alright"
+- content: alright
   author:
-    name: "Info"
-- content: "bai"
+    name: Info
+- content: bai
   author:
-    name: "Info"
-- content: "right...."
+    name: Info
+- content: right....
   author:
-    name: "Info"
-- content: "https://assets.tterrag.com/discord/forge-banner.jpeg"
+    name: Info
+- content: https://assets.tterrag.com/discord/forge-banner.jpeg
   author:
-    name: "Spidey Bot"
+    name: Spidey Bot
   embeds:
-  - title: "Okay"
-    description: "Maybe not"
-    color: 536870911
+  - title: Okay
+    description: Maybe not
+    color: '#1fffffff'
 - author:
-    name: "Info"
+    name: Info
   embeds:
-  - title: "Not Problems with OptiFine installed?"
-    description: "....."
-    color: 16228099
+  - title: Not Problems with OptiFine installed?
+    description: '.....'
+    color: '#f79f03'
+- author:
+    name: Info
+  embeds:
+  - title: '.....'
+    description: '.....'
+    color: '#3f7f3'
