@@ -14,7 +14,10 @@ import uk.gemwire.camelot.commands.moderation.PurgeCommand;
 import uk.gemwire.camelot.commands.moderation.UnbanCommand;
 import uk.gemwire.camelot.commands.moderation.UnmuteCommand;
 import uk.gemwire.camelot.commands.moderation.WarnCommand;
+import uk.gemwire.camelot.commands.utility.EvalCommand;
 import uk.gemwire.camelot.commands.utility.PingCommand;
+import uk.gemwire.camelot.commands.utility.ManageTrickCommand;
+import uk.gemwire.camelot.commands.utility.TrickCommand;
 import uk.gemwire.camelot.configuration.Config;
 
 /**
@@ -60,6 +63,9 @@ public class Commands {
 
                 // Message context menus
                 .addContextMenus(new InfoChannelCommand.UploadToDiscohookContextMenu())
+
+                .addSlashCommands(new ManageTrickCommand(), new TrickCommand())
+                .addCommand(new EvalCommand())
 
                 .build();
 

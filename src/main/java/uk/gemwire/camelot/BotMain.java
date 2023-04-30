@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.UserSnowflake;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
+import net.dv8tion.jda.api.hooks.EventListener;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
@@ -18,9 +19,12 @@ import org.slf4j.LoggerFactory;
 import org.sqlite.SQLiteDataSource;
 import uk.gemwire.camelot.commands.Commands;
 import uk.gemwire.camelot.commands.information.InfoChannelCommand;
+import uk.gemwire.camelot.commands.utility.EvalCommand;
+import uk.gemwire.camelot.commands.utility.ManageTrickCommand;
 import uk.gemwire.camelot.configuration.Common;
 import uk.gemwire.camelot.configuration.Config;
 import uk.gemwire.camelot.db.transactionals.PendingUnbansDAO;
+import uk.gemwire.camelot.listener.TrickListener;
 import uk.gemwire.camelot.log.ModerationActionRecorder;
 import uk.gemwire.camelot.util.jda.ButtonManager;
 
@@ -86,7 +90,7 @@ public class BotMain {
     /**
      * Static JDBI instance. Can be accessed via {@link #jdbi()}.
      */
-    private static Jdbi jdbi;
+    public static Jdbi jdbi;
 
     /**
      * Logger instance for the whole bot. Perhaps overkill.
@@ -123,6 +127,9 @@ public class BotMain {
                 .setActivity(Activity.playing("the fiddle"))
                 .setMemberCachePolicy(MemberCachePolicy.ALL)
                 .addEventListeners(BUTTON_MANAGER, new ModerationActionRecorder(), InfoChannelCommand.EVENT_LISTENER)
+
+                .addEventListeners(new TrickListener(), (EventListener) ManageTrickCommand.Update::onEvent, (EventListener) ManageTrickCommand.Add::onEvent, (EventListener) EvalCommand::onEvent)
+
                 .build();
         Config.populate(instance);
 
@@ -168,6 +175,8 @@ public class BotMain {
         dataSource.setUrl(url);
         dataSource.setEncoding("UTF-8");
         dataSource.setDatabaseName("Camelot DB");
+        dataSource.setEnforceForeignKeys(true);
+        dataSource.setCaseSensitiveLike(false);
         LOGGER.info("Initiating SQLite database connection at {}.", url);
 
         final var flyway = Flyway.configure()

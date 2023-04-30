@@ -31,6 +31,11 @@ public class Config {
     public static String PREFIX = "";
 
     /**
+     * The role that grants permission to edit any trick.
+     */
+    public static long TRICK_MASTER_ROLE;
+
+    /**
      * A GitHub API instance to be used for interacting with GitHub.
      */
     public static GitHub GITHUB;
@@ -51,6 +56,7 @@ public class Config {
             LOGIN_TOKEN = properties.getProperty("token");
             OWNER_SNOWFLAKE = Long.parseLong(properties.getProperty("owner"));
             PREFIX = properties.getProperty("prefix");
+            TRICK_MASTER_ROLE = Long.parseLong(properties.getProperty("trickMaster", "0"));
 
         } catch (Exception e) {
             Files.writeString(Path.of("config.properties"),
@@ -61,6 +67,8 @@ public class Config {
                             owner=0
                             # The prefix for textual commands. Temporary.
                             prefix=!
+                            # The role that grants permission to edit any trick.
+                            trickMaster=0
                             
                             # The channel in which to send moderation logs.
                             moderationLogs=0
