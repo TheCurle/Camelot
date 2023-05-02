@@ -70,10 +70,9 @@ dependencies {
     implementation group: 'club.minnced', name: 'discord-webhooks', version: project.discord_webhooks_version
     implementation group: 'net.sf.jopt-simple', name: 'jopt-simple', version: project.jopt_version // Used by tricks
 
-    implementation 'info.picocli:picocli:4.7.3'
-    implementation group: 'org.graalvm.js', name: 'js', version: '22.2.0'
-    implementation group: 'org.graalvm.js', name: 'js-scriptengine', version: '22.2.0'
-    implementation 'args4j:args4j:2.33'
+    implementation group: 'org.graalvm.js', name: 'js', version: project.graal_version
+    implementation group: 'org.graalvm.js', name: 'js-scriptengine', version: project.graal_version
+    implementation group: 'args4j', name: 'args4j', version: project.arg4j_version
 }
 
 jar {
