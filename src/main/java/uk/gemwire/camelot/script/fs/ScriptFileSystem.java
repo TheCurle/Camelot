@@ -70,7 +70,7 @@ public class ScriptFileSystem extends FileSystem {
     @Override
     public Path getPath(@NotNull String first, @NotNull String... more) {
         if (more.length > 0) {
-            var args = new String[more.length + 1];
+            final String[] args = new String[more.length + 1];
             args[0] = first;
             System.arraycopy(more, 0, args, 1, more.length);
             return new ScriptPath(this, args);
@@ -89,7 +89,7 @@ public class ScriptFileSystem extends FileSystem {
     }
 
     @Override
-    public WatchService newWatchService() throws IOException {
+    public WatchService newWatchService() {
         throw new UnsupportedOperationException();
     }
 }

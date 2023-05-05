@@ -15,6 +15,7 @@ import org.kohsuke.args4j.spi.IntOptionHandler;
 import org.kohsuke.args4j.spi.OptionHandler;
 import org.kohsuke.args4j.spi.Setter;
 import org.kohsuke.args4j.spi.StringOptionHandler;
+import uk.gemwire.camelot.script.option.MentionableOptionHandler;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;

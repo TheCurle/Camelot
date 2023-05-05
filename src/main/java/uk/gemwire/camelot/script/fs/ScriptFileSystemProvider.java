@@ -180,7 +180,7 @@ public class ScriptFileSystemProvider extends FileSystemProvider {
     public static class ByteArrayChannel implements SeekableByteChannel {
 
         private final ReadWriteLock rwlock = new ReentrantReadWriteLock();
-        private byte buf[];
+        private byte[] buf;
 
         /*
          * The current position of this channel.
@@ -193,7 +193,7 @@ public class ScriptFileSystemProvider extends FileSystemProvider {
         private int last;
 
         private boolean closed;
-        private boolean readonly;
+        private final boolean readonly;
 
         /*
          * Creates a ByteArrayChannel with its 'pos' at 0 and its 'last' at buf's end.
@@ -243,7 +243,7 @@ public class ScriptFileSystemProvider extends FileSystemProvider {
                 ensureOpen();
                 if (pos == last)
                     return -1;
-                int n = Math.min(dst.remaining(), last - pos);
+                final int n = Math.min(dst.remaining(), last - pos);
                 dst.put(buf, pos, n);
                 pos += n;
                 return n;
@@ -254,20 +254,18 @@ public class ScriptFileSystemProvider extends FileSystemProvider {
 
         @Override
         public SeekableByteChannel truncate(long size) throws IOException {
-            if (readonly)
-                throw new NonWritableChannelException();
+            if (readonly) throw new NonWritableChannelException();
             ensureOpen();
             throw new UnsupportedOperationException();
         }
 
         @Override
         public int write(ByteBuffer src) throws IOException {
-            if (readonly)
-                throw new NonWritableChannelException();
+            if (readonly) throw new NonWritableChannelException();
             beginWrite();
             try {
                 ensureOpen();
-                int n = src.remaining();
+                final int n = src.remaining();
                 ensureCapacity(pos + n);
                 src.get(buf, pos, n);
                 pos += n;
@@ -292,9 +290,8 @@ public class ScriptFileSystemProvider extends FileSystemProvider {
         }
 
         @Override
-        public void close() throws IOException {
-            if (closed)
-                return;
+        public void close() {
+            if (closed) return;
             beginWrite();
             try {
                 closed = true;
@@ -307,8 +304,7 @@ public class ScriptFileSystemProvider extends FileSystemProvider {
         }
 
         private void ensureOpen() throws IOException {
-            if (closed)
-                throw new ClosedChannelException();
+            if (closed) throw new ClosedChannelException();
         }
 
         final void beginWrite() {
@@ -319,11 +315,11 @@ public class ScriptFileSystemProvider extends FileSystemProvider {
             rwlock.writeLock().unlock();
         }
 
-        private final void beginRead() {
+        private void beginRead() {
             rwlock.readLock().lock();
         }
 
-        private final void endRead() {
+        private void endRead() {
             rwlock.readLock().unlock();
         }
 

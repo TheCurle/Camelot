@@ -16,16 +16,35 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+/**
+ * The context of a script execution.
+ *
+ * @param reply a consumer used to send a message to the user
+ */
 public record ScriptContext(
         JDA jda, Guild guild, Member member, MessageChannel channel,
         Consumer<MessageCreateData> reply
 ) {
     private static final Map<Class<?>, ScriptTransformer<?>> TRANSFORMERS = new HashMap<>();
 
+    /**
+     * Transforms the given object to one which may be given to a script execution.
+     *
+     * @param context     the context to transform the script with
+     * @param toTransform the object to transform
+     * @return the transformed object
+     */
     public static Object transform(ScriptContext context, Object toTransform) {
         return getTransformer(toTransform).transform(context, toTransform);
     }
 
+    /**
+     * Gets the {@link ScriptTransformer} for the given {@code obj}, usually based on its {@link Object#getClass() class}.
+     *
+     * @param obj the object for which to get a transformer
+     * @param <T> the type of the object
+     * @return the transformer
+     */
     @SuppressWarnings("unchecked")
     public static <T> ScriptTransformer<T> getTransformer(T obj) {
         return (ScriptTransformer<T>) TRANSFORMERS.computeIfAbsent(obj.getClass(), k -> {
@@ -47,6 +66,11 @@ public record ScriptContext(
         });
     }
 
+    /**
+     * Compiles this context into a {@link ScriptObject} containing the full context.
+     *
+     * @return the script object
+     */
     public ScriptObject compile() {
         return ScriptObject.of("Script")
                 // The context with which the script was executed
@@ -101,6 +125,12 @@ public record ScriptContext(
                 .putLazyGetter("getGuild", () -> createGuild(role.getGuild()));
     }
 
+    /**
+     * An interface used to transform Java objects into objects which may be fed into script execution {@link org.graalvm.polyglot.Context contexts}.
+     *
+     * @param <T> the type of the object this transformer transforms
+     */
+    @FunctionalInterface
     public interface ScriptTransformer<T> {
         Object transform(ScriptContext context, T object);
     }

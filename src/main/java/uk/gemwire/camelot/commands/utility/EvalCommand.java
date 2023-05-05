@@ -21,6 +21,12 @@ import uk.gemwire.camelot.script.ScriptUtils;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * A command used for evaluating scripts.
+ * <p>This text command accepts a js codeblocks with the script to run, and will make the bot respond with two buttons: an evaluate and add trick button.</p>
+ * <p>The evaluate button prompts a modal asking for arguments to run the script with, and when submitted, the script will be evaluated.</p>
+ * <p>The add trick button prompts a modal asking for trick names (separated by a space) and when submitted will add the script as a trick.</p>
+ */
 public class EvalCommand extends Command {
     public EvalCommand() {
         this.name = "eval";
@@ -76,6 +82,10 @@ public class EvalCommand extends Command {
         }
     }
 
+    /**
+     * {@return the script in the {@code msg}}
+     * <p>This will return either the content between js codeblocks, between inline codeblocks or otherwise, the raw message content.</p>
+     */
     private static String getMessageScript(Message msg) {
         final String content = msg.getContentRaw().substring((Commands.get().getPrefix() + "eval").length()).trim();
         if (content.startsWith("```js")) {

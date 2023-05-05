@@ -14,10 +14,12 @@ import uk.gemwire.camelot.db.transactionals.TricksDAO;
 import uk.gemwire.camelot.script.ScriptContext;
 import uk.gemwire.camelot.script.ScriptUtils;
 
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+/**
+ * A listener listening for {@link MessageReceivedEvent} and seeing if they match a trick alias, which if found,
+ * will be executed with the arguments.
+ */
 public class TrickListener implements EventListener {
     public void onEvent(@NotNull GenericEvent gevent) {
         if (!(gevent instanceof MessageReceivedEvent event)) return;

@@ -1,4 +1,4 @@
-package uk.gemwire.camelot.script;
+package uk.gemwire.camelot.script.option;
 
 import net.dv8tion.jda.api.entities.IMentionable;
 import net.dv8tion.jda.api.entities.Member;
@@ -11,15 +11,21 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.OptionDef;
 import org.kohsuke.args4j.spi.OneArgumentOptionHandler;
 import org.kohsuke.args4j.spi.Setter;
+import uk.gemwire.camelot.script.ScriptContext;
+import uk.gemwire.camelot.script.ScriptOptions;
 
 import java.util.Optional;
 import java.util.regex.Matcher;
 
+/**
+ * An {@link org.kohsuke.args4j.spi.OptionHandler} that parses Discord users, roles, guilds or channels.
+ */
 public class MentionableOptionHandler extends OneArgumentOptionHandler<IMentionable> {
     private final Message.MentionType mentionType;
     private final boolean isMember;
     private final ScriptContext context;
 
+    @SuppressWarnings("rawtypes")
     public MentionableOptionHandler(CmdLineParser parser, OptionDef option, Setter<? super IMentionable> setter) {
         super(parser, option, setter);
         final boolean isMemberType = setter.getType() == (Class) Member.class;
@@ -49,7 +55,7 @@ public class MentionableOptionHandler extends OneArgumentOptionHandler<IMentiona
         } catch (NumberFormatException ignored) {
             final Matcher matcher = mentionType.getPattern().matcher(argument);
             if (!matcher.find()) {
-                throw new CmdLineException(owner, "Invalid mention \"" + argument + "\"; not of type " + mentionType);
+                throw new CmdLineException(owner, new NoLocaleLocalizable("Invalid mention \"" + argument + "\"; not of type " + mentionType));
             } else {
                 id = Long.parseUnsignedLong(matcher.group(1));
             }

@@ -30,6 +30,10 @@ import uk.gemwire.camelot.util.jda.ButtonManager;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * The slash command used to manage tricks.
+ * <p>This is different from {@link TrickCommand} to avoid the use of too many subcommands, which can be confusing.</p>
+ */
 public class ManageTrickCommand extends SlashCommand {
 
     public static final SubcommandGroupData ALIAS = new SubcommandGroupData("alias", "Manage command aliases");
@@ -53,6 +57,10 @@ public class ManageTrickCommand extends SlashCommand {
 
     }
 
+    /**
+     * The command used to add a new trick.
+     * <p>This command prompts a modal asking for the trick names (separated by a space) and the script,</p>
+     */
     public static final class Add extends SlashCommand {
         public static final String MODAL_ID = "add-trick";
 
@@ -64,15 +72,15 @@ public class ManageTrickCommand extends SlashCommand {
         @Override
         protected void execute(SlashCommandEvent event) {
             event.replyModal(Modal.create(MODAL_ID, "Add a new trick")
-                    .addActionRow(TextInput.create("names", "Trick names", TextInputStyle.SHORT)
-                            .setRequired(true)
-                            .setMinLength(1)
+                            .addActionRow(TextInput.create("names", "Trick names", TextInputStyle.SHORT)
+                                    .setRequired(true)
+                                    .setMinLength(1)
+                                    .build())
+                            .addActionRow(TextInput.create("script", "The trick script", TextInputStyle.PARAGRAPH)
+                                    .setRequired(true)
+                                    .setMinLength(1)
+                                    .build())
                             .build())
-                    .addActionRow(TextInput.create("script", "The trick script", TextInputStyle.PARAGRAPH)
-                            .setRequired(true)
-                            .setMinLength(1)
-                            .build())
-                    .build())
                     .queue();
         }
 
@@ -115,6 +123,9 @@ public class ManageTrickCommand extends SlashCommand {
         }
     }
 
+    /**
+     * The command used to delete a trick, by name or ID.
+     */
     public static final class Delete extends SlashCommand {
         public Delete() {
             this.name = "delete";
@@ -147,6 +158,10 @@ public class ManageTrickCommand extends SlashCommand {
         }
     }
 
+    /**
+     * The command used to delete a trick, by name or ID.
+     * <p>This command will prompt a modal asking for the new script of the trick.</p>
+     */
     public static final class Update extends SlashCommand {
         public static final String MODAL_ID = "update-trick-";
 
@@ -199,6 +214,10 @@ public class ManageTrickCommand extends SlashCommand {
 
     }
 
+    /**
+     * Retrieves information about a trick, by name or ID.
+     * <p>This command will show the script, names and owner of the trick.</p>
+     */
     public static final class Info extends SlashCommand {
 
         public Info() {
@@ -220,11 +239,11 @@ public class ManageTrickCommand extends SlashCommand {
             // Explicit generics because IJ gets confused
             final String names = String.join(" ", BotMain.jdbi().<List<String>, TricksDAO, RuntimeException>withExtension(TricksDAO.class, db -> db.getTrickNames(trick.id())));
             event.replyEmbeds(new EmbedBuilder()
-                    .setTitle("Information about trick nr. " + trick.id()) // TODO - description member
-                    .appendDescription("Script:\n```js\n" + trick.script() + "\n```")
-                    .addField("Names", names.isBlank() ? "*This trick has no names*" : names, false)
-                    .addField("Owner", "<@" + trick.owner() + "> (" + trick.owner() + ")", false)
-                    .build())
+                            .setTitle("Information about trick nr. " + trick.id()) // TODO - description member
+                            .appendDescription("Script:\n```js\n" + trick.script() + "\n```")
+                            .addField("Names", names.isBlank() ? "*This trick has no names*" : names, false)
+                            .addField("Owner", "<@" + trick.owner() + "> (" + trick.owner() + ")", false)
+                            .build())
                     .queue();
         }
 
@@ -234,6 +253,9 @@ public class ManageTrickCommand extends SlashCommand {
         }
     }
 
+    /**
+     * The command used to add a new alias to a trick.
+     */
     public static final class AliasAdd extends SlashCommand {
         public AliasAdd() {
             this.name = "add";
@@ -279,6 +301,9 @@ public class ManageTrickCommand extends SlashCommand {
         }
     }
 
+    /**
+     * The command used to delete a trick's alias.
+     */
     public static final class AliasDelete extends SlashCommand {
         public AliasDelete() {
             this.name = "delete";
@@ -313,6 +338,9 @@ public class ManageTrickCommand extends SlashCommand {
         }
     }
 
+    /**
+     * The command used to list all tricks.
+     */
     public static final class ListCmd extends PaginatableCommand<PaginatableCommand.SimpleData> {
 
         public ListCmd(ButtonManager buttonManager) {
@@ -351,24 +379,42 @@ public class ManageTrickCommand extends SlashCommand {
         }
     }
 
+    /**
+     * {@return if the given {@code member} can edit the {@code trick}}
+     */
     private static boolean checkCanEdit(Trick trick, Member member) {
         return member.getIdLong() == trick.owner() || member.hasPermission(Permission.MODERATE_MEMBERS) ||
                 member.getRoles().stream().anyMatch(role -> role.getIdLong() == Config.TRICK_MASTER_ROLE);
     }
 
+    /**
+     * Gets a trick from a {@code optionMapping}.
+     * <p>This method first tries to query by ID, and then by name, getting the option {@linkplain OptionMapping#getAsString() as a string}.</p>
+     */
     static Trick getTrick(OptionMapping optionMapping) {
         return BotMain.jdbi().withExtension(TricksDAO.class, db -> db.getTrick(optionMapping.getAsString()));
     }
 
+    /**
+     * Suggests autocomplete choices for trick names.
+     * @param event the autocomplete event
+     * @param trickOpt the name of the option to suggest tricks to.
+     */
     static void suggestTrickAutocomplete(CommandAutoCompleteInteractionEvent event, String trickOpt) {
         if (!event.getFocusedOption().getName().equals(trickOpt)) return;
         final List<String> tricks = BotMain.jdbi().withExtension(TricksDAO.class, db -> db.findTricksMatching("%" + event.getFocusedOption().getValue() + "%"));
         event.replyChoices(tricks.stream()
-                .map(tr -> new Command.Choice(tr, tr))
-                .toList())
+                        .map(tr -> new Command.Choice(tr, tr))
+                        .toList())
                 .queue(suc -> {}, e -> {});
     }
 
+    /**
+     * Checks if the given {@code name} is valid for a trick alias.
+     *
+     * @param name the name to check
+     * @return if the given name is valid
+     */
     private static boolean isNameValid(String name) {
         return !name.isBlank() && name.matches("[a-z0-9-]+");
     }

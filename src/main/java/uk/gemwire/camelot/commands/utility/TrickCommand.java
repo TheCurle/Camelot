@@ -13,6 +13,9 @@ import uk.gemwire.camelot.script.ScriptUtils;
 
 import java.util.List;
 
+/**
+ * The slash command that runs a trick.
+ */
 public class TrickCommand extends SlashCommand {
     public TrickCommand() {
         this.name = "trick";

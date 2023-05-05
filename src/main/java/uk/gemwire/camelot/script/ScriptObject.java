@@ -3,7 +3,6 @@ package uk.gemwire.camelot.script;
 import com.google.common.base.Suppliers;
 import net.dv8tion.jda.api.entities.IMentionable;
 import net.dv8tion.jda.api.entities.ISnowflake;
-import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.Value;
 import org.graalvm.polyglot.proxy.ProxyArray;
 import org.graalvm.polyglot.proxy.ProxyExecutable;
@@ -13,6 +12,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
+/**
+ * A simple {@link ProxyObject} that can be chained to easily create script objects.
+ */
 public class ScriptObject implements ProxyObject {
     private final String name;
     private final Map<String, Object> values = new HashMap<>();
@@ -119,6 +121,10 @@ public class ScriptObject implements ProxyObject {
         }
     }
 
+    /**
+     * Transfers the values in this object to the given {@code bindings}.
+     * @see Value#putMember(String, Object)
+     */
     public void transferTo(Value bindings) {
         this.values.forEach(bindings::putMember);
     }

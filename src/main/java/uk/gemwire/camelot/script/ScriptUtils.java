@@ -39,6 +39,9 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+/**
+ * A class containing utilities for evaluating JavaScript scripts.
+ */
 public class ScriptUtils {
     public static final char ESCAPE = (char) 92; // \\
     public static final char SPACE = ' ';
@@ -129,6 +132,13 @@ public class ScriptUtils {
         ((ScheduledThreadPoolExecutor) SERVICE).setMaximumPoolSize(10);
     }
 
+    /**
+     * Submits the given {@code script} for execution on another thread, timing out after 5 seconds.
+     *
+     * @param context the context to evaluate the script with
+     * @param script  the script to evaluate
+     * @param args    the arguments to evaluate the script with
+     */
     public static void submitExecution(ScriptContext context, String script, String args) {
         final Future<Void> execution = ScriptUtils.SERVICE.submit(() -> ScriptUtils.execute(context, script, args), null);
 
@@ -140,6 +150,13 @@ public class ScriptUtils {
         }, 5, TimeUnit.SECONDS);
     }
 
+    /**
+     * Evaluate the given {@code script}.
+     *
+     * @param context   the context to evaluate the script with
+     * @param script    the script to evaluate
+     * @param arguments the arguments to evaluate the script with
+     */
     public static void execute(
             ScriptContext context,
             String script,
@@ -176,8 +193,8 @@ public class ScriptUtils {
 
             try {
                 final Source source = Source.newBuilder("js", script + EXPORT_MEMBERS, "script.js")
-                                .mimeType("application/javascript+module")
-                                .build();
+                        .mimeType("application/javascript+module")
+                        .build();
                 graal.eval(source);
 
                 final Value execute = exports.getMember("execute");
@@ -207,8 +224,8 @@ public class ScriptUtils {
                     final StringBuilder message = new StringBuilder();
                     message.append("Script failed execution due to an exception: **").append(ex.getMessage()).append("**");
                     final String trace = String.join("\n", Stream.of(ex.getStackTrace())
-                                    .filter(it -> it.getClassName().equals("<js>"))
-                                    .map(el -> " at " + el).toList());
+                            .filter(it -> it.getClassName().equals("<js>"))
+                            .map(el -> " at " + el).toList());
                     if (!trace.isBlank()) {
                         message.append('\n').append("Stacktrace: \n").append(trace);
                     }
@@ -284,6 +301,13 @@ public class ScriptUtils {
         return args;
     }
 
+    /**
+     * Converts the given {@code value} to a string.
+     * <p>If the value has a {@code toString()} method, it will be called, otherwise {@link Value#asString()} will be used.</p>
+     *
+     * @param value the value to convert to a string
+     * @return the string representation of the value
+     */
     public static String toString(Value value) {
         if (value.hasMember("toString")) {
             return value.getMember("toString").execute().asString();

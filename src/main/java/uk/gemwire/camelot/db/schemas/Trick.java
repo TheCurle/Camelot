@@ -6,6 +6,13 @@ import org.jdbi.v3.core.statement.StatementContext;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+/**
+ * A database trick.
+ *
+ * @param id     the ID of the trick
+ * @param script the JavaScript script of the trick
+ * @param owner  the ID of the trick owner
+ */
 public record Trick(int id, String script, long owner) {
     public static final class Mapper implements RowMapper<Trick> {
 

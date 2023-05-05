@@ -1,5 +1,6 @@
 package uk.gemwire.camelot.script.fs;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -17,6 +18,7 @@ import java.util.Objects;
 import java.util.function.IntBinaryOperator;
 import java.util.stream.IntStream;
 
+@ParametersAreNonnullByDefault
 public final class ScriptPath implements Path {
     private final ScriptFileSystem fileSystem;
     private final boolean absolute;
@@ -55,18 +57,16 @@ public final class ScriptPath implements Path {
         this.fileSystem = fileSystem;
         this.absolute = absolute;
         this.pathParts = pathParts;
-        if (isNormalized)
-            this.normalized = this;
-        else
-            this.normalized = null;
+        if (isNormalized) this.normalized = this;
+        else this.normalized = null;
     }
 
     private String[] getPathParts(final String longstring) {
-        var clean = longstring.replace('\\', '/');
+        final String clean = longstring.replace('\\', '/');
         int startIndex = 0;
-        List<String> parts = new ArrayList<>();
+        final List<String> parts = new ArrayList<>();
         while (startIndex != longstring.length()) {
-            int index = clean.indexOf('/', startIndex);
+            final int index = clean.indexOf('/', startIndex);
             if (index == -1) {
                 parts.add(clean.substring(startIndex));
                 break;
@@ -100,9 +100,6 @@ public final class ScriptPath implements Path {
         if (this.pathParts.length > 0) {
             return new ScriptPath(this.getFileSystem(), false, this.pathParts[this.pathParts.length - 1]);
         } else {
-            // normally would be null for the empty absolute path and empty string for the empty relative
-            // path. But again, very much stuff relies on it and there's no current directory for union
-            // paths, so it does not really matter.
             return new ScriptPath(this.fileSystem, false);
         }
     }
@@ -146,8 +143,7 @@ public final class ScriptPath implements Path {
             return false;
         }
         if (other instanceof ScriptPath bp) {
-            if (this.absolute != bp.absolute)
-                return false;
+            if (this.absolute != bp.absolute) return false;
             return checkArraysMatch(this.pathParts, bp.pathParts, false);
         }
         return false;
@@ -160,8 +156,7 @@ public final class ScriptPath implements Path {
             return false;
         }
         if (other instanceof ScriptPath bp) {
-            if (!this.absolute && bp.absolute)
-                return false;
+            if (!this.absolute && bp.absolute) return false;
             return checkArraysMatch(this.pathParts, bp.pathParts, true);
         }
         return false;
@@ -179,37 +174,31 @@ public final class ScriptPath implements Path {
 
     @Override
     public Path normalize() {
-        if (normalized != null)
-            return normalized;
-        Deque<String> normpath = new ArrayDeque<>();
-        for (String pathPart : this.pathParts) {
+        if (normalized != null) return normalized;
+        final Deque<String> normalizedPath = new ArrayDeque<>();
+        for (final String pathPart : this.pathParts) {
             switch (pathPart) {
-                case ".":
-                    break;
-                case "..":
-                    if (normpath.isEmpty() || normpath.getLast().equals("..")) {
+                case "." -> {}
+                case ".." -> {
+                    if (normalizedPath.isEmpty() || normalizedPath.getLast().equals("..")) {
                         // .. on an empty path is allowed, so keep it
-                        normpath.addLast(pathPart);
+                        normalizedPath.addLast(pathPart);
                     } else {
-                        normpath.removeLast();
+                        normalizedPath.removeLast();
                     }
-                    break;
-                default:
-                    normpath.addLast(pathPart);
-                    break;
+                }
+                default -> normalizedPath.addLast(pathPart);
             }
         }
-        normalized = new ScriptPath(this.fileSystem, this.absolute, true, normpath.toArray(new String[0]));
+        normalized = new ScriptPath(this.fileSystem, this.absolute, true, normalizedPath.toArray(new String[0]));
         return normalized;
     }
 
     @Override
     public Path resolve(final Path other) {
         if (other instanceof ScriptPath path) {
-            if (path.isAbsolute()) {
-                return path;
-            }
-            String[] mergedParts = new String[this.pathParts.length + path.pathParts.length];
+            if (path.isAbsolute()) return path;
+            final String[] mergedParts = new String[this.pathParts.length + path.pathParts.length];
             System.arraycopy(this.pathParts, 0, mergedParts, 0, this.pathParts.length);
             System.arraycopy(path.pathParts, 0, mergedParts, this.pathParts.length, path.pathParts.length);
             return new ScriptPath(this.fileSystem, this.absolute, mergedParts);
@@ -219,31 +208,25 @@ public final class ScriptPath implements Path {
 
     @Override
     public Path relativize(final Path other) {
-        if (other.getFileSystem() != this.getFileSystem()) throw new IllegalArgumentException("Wrong filesystem");
-        if (other instanceof ScriptPath p) {
-            if (this.absolute != p.absolute) {
-                throw new IllegalArgumentException("Different types of path");
-            }
-
-            var length = Math.min(this.pathParts.length, p.pathParts.length);
+        if (other instanceof ScriptPath p && p.getFileSystem() == this.getFileSystem()) {
+            final int length = Math.min(this.pathParts.length, p.pathParts.length);
             int i = 0;
             while (i < length) {
-                if (!Objects.equals(this.pathParts[i], p.pathParts[i]))
-                    break;
+                if (!Objects.equals(this.pathParts[i], p.pathParts[i])) break;
                 i++;
             }
 
-            var remaining = this.pathParts.length - i;
+            final int remaining = this.pathParts.length - i;
             if (remaining == 0 && i == p.pathParts.length) {
                 return new ScriptPath(this.getFileSystem(), false);
             } else if (remaining == 0) {
                 return p.subpath(i, p.getNameCount());
             } else {
-                var updots = IntStream.range(0, remaining).mapToObj(idx -> "..").toArray(String[]::new);
+                final String[] updots = IntStream.range(0, remaining).mapToObj(idx -> "..").toArray(String[]::new);
                 if (i == p.pathParts.length) {
                     return new ScriptPath(this.getFileSystem(), false, updots);
                 } else {
-                    var subpath = p.subpath(i, p.getNameCount());
+                    final ScriptPath subpath = p.subpath(i, p.getNameCount());
                     String[] mergedParts = new String[updots.length + subpath.pathParts.length];
                     System.arraycopy(updots, 0, mergedParts, 0, updots.length);
                     System.arraycopy(subpath.pathParts, 0, mergedParts, updots.length, subpath.pathParts.length);
@@ -257,12 +240,7 @@ public final class ScriptPath implements Path {
     @Override
     public URI toUri() {
         try {
-            return new URI(
-                    fileSystem.provider().getScheme(),
-                    null,
-                    toAbsolutePath().toString(),
-                    null
-            );
+            return new URI(fileSystem.provider().getScheme(), null, toAbsolutePath().toString(), null);
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
@@ -274,7 +252,7 @@ public final class ScriptPath implements Path {
     }
 
     @Override
-    public Path toRealPath(final LinkOption... options) throws IOException {
+    public Path toRealPath(final LinkOption... options) {
         return this.toAbsolutePath().normalize();
     }
 
@@ -286,12 +264,9 @@ public final class ScriptPath implements Path {
     @Override
     public int compareTo(final Path other) {
         if (other instanceof ScriptPath path) {
-            if (this.absolute && !path.absolute)
-                return 1;
-            else if (!this.absolute && path.absolute)
-                return -1;
-            else
-                return Arrays.compare(this.pathParts, path.pathParts);
+            if (this.absolute && !path.absolute) return 1;
+            else if (!this.absolute && path.absolute) return -1;
+            else return Arrays.compare(this.pathParts, path.pathParts);
         } else {
             return 0;
         }
@@ -299,10 +274,9 @@ public final class ScriptPath implements Path {
 
     @Override
     public boolean equals(final Object o) {
-        if (o instanceof ScriptPath p) {
-            return p.getFileSystem() == this.getFileSystem() && this.absolute == p.absolute && Arrays.equals(this.pathParts, p.pathParts);
-        }
-        return false;
+        return o instanceof ScriptPath p &&
+                p.getFileSystem() == this.getFileSystem() &&
+                this.absolute == p.absolute && Arrays.equals(this.pathParts, p.pathParts);
     }
 
     @Override
