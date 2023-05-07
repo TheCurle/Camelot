@@ -53,6 +53,7 @@ import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import org.jetbrains.annotations.Nullable;
 import org.kohsuke.github.GHContent;
 import uk.gemwire.camelot.BotMain;
+import uk.gemwire.camelot.Database;
 import uk.gemwire.camelot.configuration.Config;
 import uk.gemwire.camelot.db.schemas.GithubLocation;
 import uk.gemwire.camelot.db.schemas.InfoChannel;
@@ -116,13 +117,13 @@ public class InfoChannelCommand extends SlashCommand {
 
         @Override
         protected void execute(SlashCommandEvent event) {
-            final InfoChannel ch = BotMain.jdbi().withExtension(InfoChannelsDAO.class, db -> db.getChannel(event.getChannel().getIdLong()));
+            final InfoChannel ch = Database.main().withExtension(InfoChannelsDAO.class, db -> db.getChannel(event.getChannel().getIdLong()));
             if (ch == null) {
                 event.reply("This channel is not an info channel!").setEphemeral(true).queue();
                 return;
             }
 
-            BotMain.jdbi().useExtension(InfoChannelsDAO.class, db -> db.delete(event.getChannel().getIdLong()));
+            Database.main().useExtension(InfoChannelsDAO.class, db -> db.delete(event.getChannel().getIdLong()));
             event.reply("The channel is no longer an info channel!").queue();
         }
     }
@@ -152,7 +153,7 @@ public class InfoChannelCommand extends SlashCommand {
             }
 
             final InfoChannel ic = new InfoChannel(event.getChannel().getIdLong(), location, event.getOption("recreate", false, OptionMapping::getAsBoolean), null);
-            BotMain.jdbi().useExtension(InfoChannelsDAO.class, db -> db.insert(ic));
+            Database.main().useExtension(InfoChannelsDAO.class, db -> db.insert(ic));
             event.reply("Successfully set channel as info channel!")
                     .setEphemeral(true)
                     .delay(5, TimeUnit.SECONDS)
@@ -172,7 +173,7 @@ public class InfoChannelCommand extends SlashCommand {
 
         @Override
         protected void execute(SlashCommandEvent event) {
-            final InfoChannel ch = BotMain.jdbi().withExtension(InfoChannelsDAO.class, db -> db.getChannel(event.getChannel().getIdLong()));
+            final InfoChannel ch = Database.main().withExtension(InfoChannelsDAO.class, db -> db.getChannel(event.getChannel().getIdLong()));
             if (ch == null || !(event.getChannel() instanceof IWebhookContainer web)) {
                 event.reply("This channel is not an info channel with webhook support!").setEphemeral(true).queue();
                 return;
@@ -283,7 +284,7 @@ public class InfoChannelCommand extends SlashCommand {
      * Update the info channels to make sure they're not outdated.
      */
     public static void run() {
-        final List<InfoChannel> channels = BotMain.jdbi().withExtension(InfoChannelsDAO.class, InfoChannelsDAO::getChannels);
+        final List<InfoChannel> channels = Database.main().withExtension(InfoChannelsDAO.class, InfoChannelsDAO::getChannels);
         for (final InfoChannel ch : channels) {
             if (Config.GITHUB == null) {
                 BotMain.LOGGER.error("Info channels are set up, but a GitHub connection is not configured!");
@@ -293,7 +294,7 @@ public class InfoChannelCommand extends SlashCommand {
 
             final MessageChannel messageChannel = BotMain.get().getChannelById(MessageChannel.class, ch.channel());
             if (messageChannel == null) {
-                BotMain.jdbi().useExtension(InfoChannelsDAO.class, db -> db.delete(ch.channel()));
+                Database.main().useExtension(InfoChannelsDAO.class, db -> db.delete(ch.channel()));
                 return;
             }
 
@@ -336,7 +337,7 @@ public class InfoChannelCommand extends SlashCommand {
                                                     cf = Utils.whenComplete(cf, () -> cfSend.apply(theMessage));
                                                 }
                                                 cf.whenComplete((o, throwable) -> BotMain.EXECUTOR.schedule(() -> UPDATING_CHANNELS.remove(ch.channel()), 5, TimeUnit.SECONDS)); // Give some wiggle room in case of high latency
-                                                BotMain.jdbi().useExtension(InfoChannelsDAO.class, db -> db.updateHash(ch.channel(), hash));
+                                                Database.main().useExtension(InfoChannelsDAO.class, db -> db.updateHash(ch.channel(), hash));
                                             });
                                 });
                     } else {
@@ -382,7 +383,7 @@ public class InfoChannelCommand extends SlashCommand {
                                     }
 
                                     cf.whenComplete((o, throwable) -> BotMain.EXECUTOR.schedule(() -> UPDATING_CHANNELS.remove(ch.channel()), 5, TimeUnit.SECONDS)); // Give some wiggle room in case of high latency
-                                    BotMain.jdbi().useExtension(InfoChannelsDAO.class, db -> db.updateHash(ch.channel(), hash));
+                                    Database.main().useExtension(InfoChannelsDAO.class, db -> db.updateHash(ch.channel(), hash));
                                 });
                     }
                 }
@@ -441,7 +442,7 @@ public class InfoChannelCommand extends SlashCommand {
         }
 
         // If the channel isn't an info channel or is being updated, early-exit
-        final InfoChannel infoChannel = BotMain.jdbi().withExtension(InfoChannelsDAO.class, db -> db.getChannel(channel.getIdLong()));
+        final InfoChannel infoChannel = Database.main().withExtension(InfoChannelsDAO.class, db -> db.getChannel(channel.getIdLong()));
         if (infoChannel == null || Config.GITHUB == null || UPDATING_CHANNELS.contains(infoChannel.channel())) return;
 
         // Now let's dump the channel

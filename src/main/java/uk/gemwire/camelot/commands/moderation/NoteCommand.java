@@ -10,7 +10,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.requests.RestAction;
 import org.jetbrains.annotations.Nullable;
-import uk.gemwire.camelot.BotMain;
+import uk.gemwire.camelot.Database;
 import uk.gemwire.camelot.db.schemas.ModLogEntry;
 import uk.gemwire.camelot.db.transactionals.ModLogsDAO;
 
@@ -89,7 +89,7 @@ public class NoteCommand extends SlashCommand {
                 return;
             }
 
-            BotMain.jdbi().useExtension(ModLogsDAO.class, db -> {
+            Database.main().useExtension(ModLogsDAO.class, db -> {
                 final ModLogEntry entry = db.getById(event.getOption("note", 0, OptionMapping::getAsInt));
                 if (entry == null || entry.type() != ModLogEntry.Type.NOTE) {
                     event.reply("Unknown note!").setEphemeral(true).queue();

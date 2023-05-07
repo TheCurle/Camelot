@@ -11,12 +11,8 @@ import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
-import org.flywaydb.core.Flyway;
-import org.jdbi.v3.core.Jdbi;
-import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.sqlite.SQLiteDataSource;
 import uk.gemwire.camelot.commands.Commands;
 import uk.gemwire.camelot.commands.information.InfoChannelCommand;
 import uk.gemwire.camelot.commands.utility.EvalCommand;
@@ -30,8 +26,6 @@ import uk.gemwire.camelot.util.jda.ButtonManager;
 
 import java.io.IOException;
 import java.net.http.HttpClient;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -88,11 +82,6 @@ public class BotMain {
     private static JDA instance;
 
     /**
-     * Static JDBI instance. Can be accessed via {@link #jdbi()}.
-     */
-    public static Jdbi jdbi;
-
-    /**
      * Logger instance for the whole bot. Perhaps overkill.
      */
 
@@ -103,13 +92,6 @@ public class BotMain {
      */
     public static JDA get() {
         return instance;
-    }
-
-    /**
-     * {@return the static JDBI instance}
-     */
-    public static Jdbi jdbi() {
-        return jdbi;
     }
 
     public static void main(String[] args) {
@@ -128,17 +110,22 @@ public class BotMain {
                 .setMemberCachePolicy(MemberCachePolicy.ALL)
                 .addEventListeners(BUTTON_MANAGER, new ModerationActionRecorder(), InfoChannelCommand.EVENT_LISTENER)
 
-                .addEventListeners(new TrickListener(), (EventListener) ManageTrickCommand.Update::onEvent, (EventListener) ManageTrickCommand.Add::onEvent, (EventListener) EvalCommand::onEvent)
+                .addEventListeners((EventListener) ManageTrickCommand.Update::onEvent, (EventListener) ManageTrickCommand.Add::onEvent, (EventListener) EvalCommand::onEvent)
 
                 .build();
         Config.populate(instance);
 
-        jdbi = createDatabaseConnection();
+        try {
+            Database.init();
+        } catch (IOException exception) {
+            throw new RuntimeException("Encountered exception setting up database connections:", exception);
+        }
 
         Commands.init();
+        instance.addEventListener(new TrickListener(Commands.get().getPrefix()));
 
         EXECUTOR.scheduleAtFixedRate(() -> {
-            final PendingUnbansDAO db = jdbi().onDemand(PendingUnbansDAO.class);
+            final PendingUnbansDAO db = Database.main().onDemand(PendingUnbansDAO.class);
             for (final Guild guild : instance.getGuilds()) {
                 final List<Long> users = db.getUsersToUnban(guild.getIdLong());
                 if (!users.isEmpty()) {
@@ -154,38 +141,5 @@ public class BotMain {
 
         // Update info channels every couple of minutes
         EXECUTOR.scheduleAtFixedRate(InfoChannelCommand::run, 1, 2, TimeUnit.MINUTES);
-    }
-
-    /**
-     * Sets up a connection to the SQLite database located at {@code data.db}, migrating it, if necessary.
-     *
-     * @return a JDBI connection to the database
-     */
-    public static Jdbi createDatabaseConnection() {
-        final Path dbPath = Path.of("data.db");
-        if (!Files.exists(dbPath)) {
-            try {
-                Files.createFile(dbPath);
-            } catch (IOException e) {
-                throw new RuntimeException("Exception creating database!", e);
-            }
-        }
-        final String url = "jdbc:sqlite:" + dbPath;
-        final SQLiteDataSource dataSource = new SQLiteDataSource();
-        dataSource.setUrl(url);
-        dataSource.setEncoding("UTF-8");
-        dataSource.setDatabaseName("Camelot DB");
-        dataSource.setEnforceForeignKeys(true);
-        dataSource.setCaseSensitiveLike(false);
-        LOGGER.info("Initiating SQLite database connection at {}.", url);
-
-        final var flyway = Flyway.configure()
-                .dataSource(dataSource)
-                .locations("classpath:db")
-                .load();
-        flyway.migrate();
-
-        return Jdbi.create(dataSource)
-                .installPlugin(new SqlObjectPlugin());
     }
 }

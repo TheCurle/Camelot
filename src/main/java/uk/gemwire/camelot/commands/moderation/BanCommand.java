@@ -11,7 +11,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.requests.RestAction;
 import org.jetbrains.annotations.Nullable;
-import uk.gemwire.camelot.BotMain;
+import uk.gemwire.camelot.Database;
 import uk.gemwire.camelot.db.schemas.ModLogEntry;
 import uk.gemwire.camelot.db.transactionals.PendingUnbansDAO;
 import uk.gemwire.camelot.util.DateUtils;
@@ -60,7 +60,7 @@ public class BanCommand extends ModerationCommand<Integer> {
         }
         final Duration time = event.getOption("duration", it -> DateUtils.getDurationFromInput(it.getAsString()));
         if (time != null) {
-            BotMain.jdbi().useExtension(PendingUnbansDAO.class, db -> db.insert(targetId, event.getGuild().getIdLong(), Timestamp.from(Instant.now().plus(time))));
+            Database.main().useExtension(PendingUnbansDAO.class, db -> db.insert(targetId, event.getGuild().getIdLong(), Timestamp.from(Instant.now().plus(time))));
         }
         return new ModerationAction<>(
                 ModLogEntry.ban(targetId, event.getGuild().getIdLong(), event.getUser().getIdLong(), time, event.optString("reason")),

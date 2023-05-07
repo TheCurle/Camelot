@@ -20,6 +20,7 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import uk.gemwire.camelot.BotMain;
+import uk.gemwire.camelot.Database;
 import uk.gemwire.camelot.commands.Commands;
 import uk.gemwire.camelot.commands.PaginatableCommand;
 import uk.gemwire.camelot.configuration.Config;
@@ -94,7 +95,7 @@ public class ManageTrickCommand extends SlashCommand {
         }
 
         public static void handleModal(ModalInteractionEvent event, String script, List<String> names) {
-            if (BotMain.jdbi().withExtension(TricksDAO.class, db -> names.stream()
+            if (Database.main().withExtension(TricksDAO.class, db -> names.stream()
                     .anyMatch(it -> db.getTrickByName(it) != null))) {
                 event.reply("A trick with at least one of the given names exists already!")
                         .addEmbeds(new EmbedBuilder()
@@ -117,8 +118,8 @@ public class ManageTrickCommand extends SlashCommand {
                 }
             }
 
-            final int id = BotMain.jdbi().withExtension(TricksDAO.class, db -> db.insertTrick(script, event.getUser().getIdLong()));
-            BotMain.jdbi().useExtension(TricksDAO.class, db -> names.forEach(name -> db.addAlias(id, name)));
+            final int id = Database.main().withExtension(TricksDAO.class, db -> db.insertTrick(script, event.getUser().getIdLong()));
+            Database.main().useExtension(TricksDAO.class, db -> names.forEach(name -> db.addAlias(id, name)));
             event.reply("Trick added!").queue();
         }
     }
@@ -148,7 +149,7 @@ public class ManageTrickCommand extends SlashCommand {
                 return;
             }
 
-            BotMain.jdbi().useExtension(TricksDAO.class, db -> db.delete(trick.id()));
+            Database.main().useExtension(TricksDAO.class, db -> db.delete(trick.id()));
             event.reply("Trick deleted!").queue();
         }
 
@@ -208,7 +209,7 @@ public class ManageTrickCommand extends SlashCommand {
             final String script = event.getValue("script").getAsString();
             final int id = Integer.parseInt(event.getModalId().substring(MODAL_ID.length()));
 
-            BotMain.jdbi().useExtension(TricksDAO.class, db -> db.updateScript(id, script));
+            Database.main().useExtension(TricksDAO.class, db -> db.updateScript(id, script));
             event.reply("Trick updated!").queue();
         }
 
@@ -237,7 +238,7 @@ public class ManageTrickCommand extends SlashCommand {
             }
 
             // Explicit generics because IJ gets confused
-            final String names = String.join(" ", BotMain.jdbi().<List<String>, TricksDAO, RuntimeException>withExtension(TricksDAO.class, db -> db.getTrickNames(trick.id())));
+            final String names = String.join(" ", Database.main().<List<String>, TricksDAO, RuntimeException>withExtension(TricksDAO.class, db -> db.getTrickNames(trick.id())));
             event.replyEmbeds(new EmbedBuilder()
                             .setTitle("Information about trick nr. " + trick.id()) // TODO - description member
                             .appendDescription("Script:\n```js\n" + trick.script() + "\n```")
@@ -286,11 +287,11 @@ public class ManageTrickCommand extends SlashCommand {
                 return;
             }
 
-            if (BotMain.jdbi().withExtension(TricksDAO.class, db -> db.getTrickByName(alias) != null)) {
+            if (Database.main().withExtension(TricksDAO.class, db -> db.getTrickByName(alias) != null)) {
                 event.reply("That alias is already used by a trick!").setEphemeral(true).queue();
                 return;
             }
-            BotMain.jdbi().useExtension(TricksDAO.class, db -> db.addAlias(trick.id(), alias));
+            Database.main().useExtension(TricksDAO.class, db -> db.addAlias(trick.id(), alias));
 
             event.reply("Alias added!").queue();
         }
@@ -317,7 +318,7 @@ public class ManageTrickCommand extends SlashCommand {
         @Override
         protected void execute(SlashCommandEvent event) {
             final String alias = event.getOption("alias", "", OptionMapping::getAsString);
-            final Trick trick = BotMain.jdbi().withExtension(TricksDAO.class, db -> {
+            final Trick trick = Database.main().withExtension(TricksDAO.class, db -> {
                 final Integer id = db.getTrickByName(alias);
                 if (id == null) return null;
                 return db.getTrick(id);
@@ -332,7 +333,7 @@ public class ManageTrickCommand extends SlashCommand {
                 return;
             }
 
-            BotMain.jdbi().useExtension(TricksDAO.class, db -> db.deleteAlias(alias));
+            Database.main().useExtension(TricksDAO.class, db -> db.deleteAlias(alias));
 
             event.reply("Alias removed!").queue();
         }
@@ -360,7 +361,7 @@ public class ManageTrickCommand extends SlashCommand {
             final EmbedBuilder embed = new EmbedBuilder();
             embed.setTitle("List of tricks")
                     .setFooter("Page " + (page + 1) + " of " + pageAmount(data.itemAmount()));
-            BotMain.jdbi().useExtension(TricksDAO.class, db -> embed.appendDescription(String.join("\n",
+            Database.main().useExtension(TricksDAO.class, db -> embed.appendDescription(String.join("\n",
                     db.getTricks(page * itemsPerPage, itemsPerPage)
                             .stream().map(trick -> {
                                 String msg = trick.id() + ". ";
@@ -392,7 +393,7 @@ public class ManageTrickCommand extends SlashCommand {
      * <p>This method first tries to query by ID, and then by name, getting the option {@linkplain OptionMapping#getAsString() as a string}.</p>
      */
     static Trick getTrick(OptionMapping optionMapping) {
-        return BotMain.jdbi().withExtension(TricksDAO.class, db -> db.getTrick(optionMapping.getAsString()));
+        return Database.main().withExtension(TricksDAO.class, db -> db.getTrick(optionMapping.getAsString()));
     }
 
     /**
@@ -402,7 +403,7 @@ public class ManageTrickCommand extends SlashCommand {
      */
     static void suggestTrickAutocomplete(CommandAutoCompleteInteractionEvent event, String trickOpt) {
         if (!event.getFocusedOption().getName().equals(trickOpt)) return;
-        final List<String> tricks = BotMain.jdbi().withExtension(TricksDAO.class, db -> db.findTricksMatching("%" + event.getFocusedOption().getValue() + "%"));
+        final List<String> tricks = Database.main().withExtension(TricksDAO.class, db -> db.findTricksMatching("%" + event.getFocusedOption().getValue() + "%"));
         event.replyChoices(tricks.stream()
                         .map(tr -> new Command.Choice(tr, tr))
                         .toList())

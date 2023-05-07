@@ -10,7 +10,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
-import uk.gemwire.camelot.BotMain;
+import uk.gemwire.camelot.Database;
 import uk.gemwire.camelot.commands.PaginatableCommand;
 import uk.gemwire.camelot.db.schemas.ModLogEntry;
 import uk.gemwire.camelot.db.transactionals.ModLogsDAO;
@@ -62,7 +62,7 @@ public class ModLogsCommand extends PaginatableCommand<ModLogsCommand.Data> {
         }
         return new Data(
                 user.getIdLong(), in, ex,
-                BotMain.jdbi().withExtension(ModLogsDAO.class, db -> db.getLogCount(
+                Database.main().withExtension(ModLogsDAO.class, db -> db.getLogCount(
                         user.getIdLong(), event.getGuild().getIdLong(), in, ex
                 ))
         );
@@ -70,7 +70,7 @@ public class ModLogsCommand extends PaginatableCommand<ModLogsCommand.Data> {
 
     @Override
     public CompletableFuture<MessageEditData> createMessage(int page, Data data, Interaction interaction) {
-        final List<ModLogEntry> logs = BotMain.jdbi().withExtension(ModLogsDAO.class, db -> db.getLogs(
+        final List<ModLogEntry> logs = Database.main().withExtension(ModLogsDAO.class, db -> db.getLogs(
                 data.target(), interaction.getGuild().getIdLong(), page * itemsPerPage,
                 this.itemsPerPage, data.include(), data.exclude()
         ));

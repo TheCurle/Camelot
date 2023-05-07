@@ -1,7 +1,7 @@
 package uk.gemwire.camelot.script.fs;
 
 import org.jetbrains.annotations.NotNull;
-import uk.gemwire.camelot.BotMain;
+import uk.gemwire.camelot.Database;
 import uk.gemwire.camelot.db.schemas.Trick;
 import uk.gemwire.camelot.db.transactionals.TricksDAO;
 
@@ -72,7 +72,7 @@ public class ScriptFileSystemProvider extends FileSystemProvider {
     @Override
     public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
         final String trickName = getTrickName(path);
-        final String script = BotMain.jdbi().withExtension(TricksDAO.class, db -> {
+        final String script = Database.main().withExtension(TricksDAO.class, db -> {
             final Integer trickId = db.getTrickByName(trickName);
             if (trickId == null) return null;
             final Trick trick = db.getTrick(trickId);
@@ -143,7 +143,7 @@ public class ScriptFileSystemProvider extends FileSystemProvider {
             }
         }
         final String trickName = getTrickName(path);
-        if (BotMain.jdbi().withExtension(TricksDAO.class, db -> db
+        if (Database.main().withExtension(TricksDAO.class, db -> db
                 .getTrickByName(trickName) == null)) {
             throw new FileNotFoundException(path.toString());
         }

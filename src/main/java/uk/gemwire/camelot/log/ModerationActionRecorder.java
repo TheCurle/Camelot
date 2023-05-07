@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.hooks.EventListener;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import uk.gemwire.camelot.BotMain;
+import uk.gemwire.camelot.Database;
 import uk.gemwire.camelot.configuration.Config;
 import uk.gemwire.camelot.db.schemas.ModLogEntry;
 import uk.gemwire.camelot.db.transactionals.ModLogsDAO;
@@ -79,7 +80,7 @@ public class ModerationActionRecorder implements EventListener {
     }
 
     private void recordAndLog(ModLogEntry entry, JDA jda) {
-        entry.setId(BotMain.jdbi().withExtension(ModLogsDAO.class, db -> db.insert(entry)));
+        entry.setId(Database.main().withExtension(ModLogsDAO.class, db -> db.insert(entry)));
         log(entry, jda);
     }
 

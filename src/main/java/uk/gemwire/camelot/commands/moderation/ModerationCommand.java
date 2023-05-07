@@ -15,6 +15,7 @@ import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import org.jetbrains.annotations.Nullable;
 import uk.gemwire.camelot.BotMain;
+import uk.gemwire.camelot.Database;
 import uk.gemwire.camelot.db.schemas.ModLogEntry;
 import uk.gemwire.camelot.db.transactionals.ModLogsDAO;
 import uk.gemwire.camelot.log.ModerationActionRecorder;
@@ -62,7 +63,7 @@ public abstract class ModerationCommand<T> extends SlashCommand {
         if (action == null) return;
         final ModLogEntry entry = action.entry;
 
-        entry.setId(BotMain.jdbi().withExtension(ModLogsDAO.class, dao -> dao.insert(entry)));
+        entry.setId(Database.main().withExtension(ModLogsDAO.class, dao -> dao.insert(entry)));
         event.deferReply().queue();
         event.getJDA().retrieveUserById(entry.user())
                 .submit()
