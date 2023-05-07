@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sqlite.SQLiteDataSource;
 import uk.gemwire.camelot.configuration.Common;
+import uk.gemwire.camelot.listener.CustomPingListener;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -31,10 +32,24 @@ public class Database {
     }
 
     /**
+     * Static JDBI custom pings instance. Can be accessed via {@link #pings()}.
+     */
+    public static Jdbi pings;
+
+    /**
+     * {@return the static custom pings JDBI instance}
+     */
+    public static Jdbi pings() {
+        return pings;
+    }
+
+    /**
      * Initialises the databases.
      */
     static void init() throws IOException {
         final Path dir = Path.of("data");
+        Files.createDirectories(dir);
+
         final Path mainDb = dir.resolve("main.db");
 
         {
@@ -46,6 +61,8 @@ public class Database {
         }
 
         main = createDatabaseConnection(mainDb, "main");
+        pings = createDatabaseConnection(dir.resolve("pings.db"), "pings");
+        CustomPingListener.requestRefresh();
     }
 
     /**

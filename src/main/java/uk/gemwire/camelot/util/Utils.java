@@ -64,4 +64,11 @@ public class Utils {
     public static String rgbToString(int rgb) {
         return String.format("#%06X", (0xFFFFFF & rgb));
     }
+
+    /**
+     * Truncates the given string if it exceeds the {@code limit}, adding an ellipsis if so.
+     */
+    public static String truncate(final String str, int limit) {
+        return str.length() > (limit - 3) ? str.substring(0, limit - 3) + "..." : str;
+    }
 }

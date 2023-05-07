@@ -36,6 +36,11 @@ public abstract class PaginatableCommand<T extends PaginatableCommand.Pagination
      */
     protected int itemsPerPage = 10;
 
+    /**
+     * If replies should be {@link net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction#setEphemeral(boolean) ephemeral}.
+     */
+    protected boolean ephemeral;
+
     protected PaginatableCommand(ButtonManager buttonManager) {
         this.buttonManager = buttonManager;
     }
@@ -49,7 +54,7 @@ public abstract class PaginatableCommand<T extends PaginatableCommand.Pagination
             return;
         }
 
-        event.deferReply().queue();
+        event.deferReply().setEphemeral(ephemeral).queue();
         final UUID btnId = buttonManager.newButton(e -> onButton(e, data));
         final var buttons = createButtons(btnId.toString(), 0, data.itemAmount());
         createMessage(0, data, event)

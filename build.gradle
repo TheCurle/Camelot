@@ -73,6 +73,8 @@ dependencies {
     implementation group: 'org.graalvm.js', name: 'js', version: project.graal_version
     implementation group: 'org.graalvm.js', name: 'js-scriptengine', version: project.graal_version
     implementation group: 'args4j', name: 'args4j', version: project.arg4j_version
+    implementation group: 'com.google.re2j', name: 're2j', version: project.re2j_version
+    implementation group: 'it.unimi.dsi', name: 'fastutil', version: project.fastutil_version
 }
 
 jar {

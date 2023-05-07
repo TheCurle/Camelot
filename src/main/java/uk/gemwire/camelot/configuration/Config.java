@@ -44,6 +44,11 @@ public class Config {
     public static ChannelLogging MODERATION_LOGS;
 
     /**
+     * The channel in which to create ping private threads if a member does not have DMs enabled.
+     */
+    public static long PINGS_THREADS_CHANNEL = 0L;
+
+    /**
      * Read configs from file.
      * If the file does not exist, or the properties are invalid, the config is reset to defaults.
      * @throws IOException if something goes wrong with the universe.
@@ -57,6 +62,7 @@ public class Config {
             OWNER_SNOWFLAKE = Long.parseLong(properties.getProperty("owner"));
             PREFIX = properties.getProperty("prefix");
             TRICK_MASTER_ROLE = Long.parseLong(properties.getProperty("trickMaster", "0"));
+            PINGS_THREADS_CHANNEL = Long.parseLong(properties.getProperty("pingsThreadsChannel", "0"));
 
         } catch (Exception e) {
             Files.writeString(Path.of("config.properties"),
@@ -69,6 +75,8 @@ public class Config {
                             prefix=!
                             # The role that grants permission to edit any trick.
                             trickMaster=0
+                            # The channel in which to create ping private threads if a member does not have DMs enabled.
+                            pingsThreadsChannel=0
                             
                             # The channel in which to send moderation logs.
                             moderationLogs=0

@@ -14,6 +14,7 @@ import uk.gemwire.camelot.commands.moderation.PurgeCommand;
 import uk.gemwire.camelot.commands.moderation.UnbanCommand;
 import uk.gemwire.camelot.commands.moderation.UnmuteCommand;
 import uk.gemwire.camelot.commands.moderation.WarnCommand;
+import uk.gemwire.camelot.commands.utility.CustomPingsCommand;
 import uk.gemwire.camelot.commands.utility.EvalCommand;
 import uk.gemwire.camelot.commands.utility.PingCommand;
 import uk.gemwire.camelot.commands.utility.ManageTrickCommand;
@@ -66,6 +67,8 @@ public class Commands {
 
                 .addSlashCommands(new ManageTrickCommand(), new TrickCommand())
                 .addCommand(new EvalCommand())
+
+                .addSlashCommand(new CustomPingsCommand())
 
                 .build();
 
