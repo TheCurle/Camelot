@@ -20,6 +20,7 @@ import uk.gemwire.camelot.commands.utility.ManageTrickCommand;
 import uk.gemwire.camelot.configuration.Common;
 import uk.gemwire.camelot.configuration.Config;
 import uk.gemwire.camelot.db.transactionals.PendingUnbansDAO;
+import uk.gemwire.camelot.listener.CountersListener;
 import uk.gemwire.camelot.listener.CustomPingListener;
 import uk.gemwire.camelot.listener.TrickListener;
 import uk.gemwire.camelot.log.ModerationActionRecorder;
@@ -109,7 +110,7 @@ public class BotMain {
                 .disableCache(CacheFlag.VOICE_STATE, CacheFlag.ACTIVITY, CacheFlag.CLIENT_STATUS, CacheFlag.ONLINE_STATUS)
                 .setActivity(Activity.playing("the fiddle"))
                 .setMemberCachePolicy(MemberCachePolicy.ALL)
-                .addEventListeners(BUTTON_MANAGER, new ModerationActionRecorder(), InfoChannelCommand.EVENT_LISTENER, new CustomPingListener())
+                .addEventListeners(BUTTON_MANAGER, new ModerationActionRecorder(), InfoChannelCommand.EVENT_LISTENER, new CustomPingListener(), new CountersListener())
 
                 .addEventListeners((EventListener) ManageTrickCommand.Update::onEvent, (EventListener) ManageTrickCommand.Add::onEvent, (EventListener) EvalCommand::onEvent)
 
