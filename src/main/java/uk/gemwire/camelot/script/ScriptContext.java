@@ -8,8 +8,12 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import uk.gemwire.camelot.Database;
+import uk.gemwire.camelot.db.transactionals.CountersDAO;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +62,8 @@ public record ScriptContext(
                 return cast(ScriptContext::createRole);
             } else if (obj instanceof Guild) {
                 return cast(ScriptContext::createGuild);
+            } else if (obj instanceof JDA) {
+                return cast(ScriptContext::createJDA);
             } else if (obj instanceof List<?>) {
                 return cast(ScriptContext::transformList);
             }
@@ -78,6 +84,7 @@ public record ScriptContext(
                 .put("member", createMember(member))
                 .put("channel", createChannel(channel))
                 .put("user", createUser(member.getUser()))
+                .put("jda", createJDA(jda))
 
                 // Methods used for replying
                 .putVoidMethod("reply", args -> reply.accept(MessageCreateData.fromContent(args.argString(0, true))))
@@ -104,6 +111,9 @@ public record ScriptContext(
         return ScriptObject.mentionable("Member", member)
                 .put("user", createUser(member.getUser()))
                 .put("avatarUrl", member.getAvatarUrl())
+                .put("nickname", member.getNickname())
+                .putLazyGetter("getPermissions", () -> new ArrayList<>(member.getPermissions()))
+                .putLazyGetter("getRoles", () -> transformList(member.getRoles()))
                 .putMethod("toString", args -> member.getUser().getAsTag() + " in " + member.getGuild().getName());
     }
 
@@ -116,13 +126,20 @@ public record ScriptContext(
     public ScriptObject createGuild(Guild guild) {
         return ScriptObject.snowflake("Guild", guild)
                 .put("name", guild.getName())
-                .putMethod("getRoles", args -> transformList(guild.getRoles()));
+                .putMethod("getRoles", args -> transformList(guild.getRoles()))
+                .putMethod("getCounter", args -> Database.main().withExtension(CountersDAO.class,
+                        db -> db.getCounterAmount(guild.getIdLong(), args.argString(0, true))));
     }
 
     public ScriptObject createRole(Role role) {
         return ScriptObject.mentionable("Role", role)
                 .put("name", role.getName())
                 .putLazyGetter("getGuild", () -> createGuild(role.getGuild()));
+    }
+
+    public ScriptObject createJDA(JDA jda) {
+        return ScriptObject.of("JDA")
+                .putMethod("getUserById", args -> createUser(jda.retrieveUserById(args.argString(0, true)).complete()));
     }
 
     /**

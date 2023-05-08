@@ -1,5 +1,6 @@
 package uk.gemwire.camelot.script;
 
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Engine;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.AccessMode;
@@ -54,7 +56,13 @@ public class ScriptUtils {
             .allowImplementationsAnnotatedBy(FunctionalInterface.class)
             .allowListAccess(true)
             .allowMapAccess(true)
-            .allowArrayAccess(true).build();
+            .allowArrayAccess(true)
+
+            .allowAccess(getMethod(Enum.class, "name"))
+            .allowAccess(getMethod(Object.class, "toString"))
+            .allowAccess(getMethod(Permission.class, "getName"))
+
+            .build();
 
     @Language("js")
     public static final String EXPORT_MEMBERS = "\ntry { simpleExports.execute = execute } catch(e) {} try { simpleExports.description = description } catch(e) {}";
@@ -313,5 +321,13 @@ public class ScriptUtils {
             return value.getMember("toString").execute().asString();
         }
         return value.asString();
+    }
+
+    private static Method getMethod(Class<?> clazz, String name, Class<?>... params) {
+        try {
+            return clazz.getDeclaredMethod(name, params);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.entities.ISnowflake;
 import org.graalvm.polyglot.Value;
 import org.graalvm.polyglot.proxy.ProxyArray;
 import org.graalvm.polyglot.proxy.ProxyExecutable;
+import org.graalvm.polyglot.proxy.ProxyInstant;
 import org.graalvm.polyglot.proxy.ProxyObject;
 
 import java.util.HashMap;
@@ -29,7 +30,8 @@ public class ScriptObject implements ProxyObject {
 
     public static ScriptObject snowflake(String name, ISnowflake snowflake) {
         return new ScriptObject(name)
-                .put("id", snowflake.getId());
+                .put("id", snowflake.getId())
+                .putLazyGetter("getCreationDate", () -> ProxyInstant.from(snowflake.getTimeCreated().toInstant()));
     }
 
     public static ScriptObject mentionable(String name, IMentionable mentionable) {
